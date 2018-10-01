@@ -48,7 +48,7 @@ func (n *Node) write(key int, value string) {
 
 // apply action
 func (n *Node) apply(){
-	for {
+	for status {
 		// while inqueue is not empty, compare it and update
 		for n.inQueue.Len() > 0 {
 			// peek
@@ -69,7 +69,7 @@ func (n *Node) apply(){
 
 // send action
 func (n *Node) send(){
-	for {
+	for status {
 		// while out queue is not empty, pop out msg and broadcast it
 		for n.outQueue.Len() > 0 {
 			// pop

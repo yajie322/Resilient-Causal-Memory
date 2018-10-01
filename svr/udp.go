@@ -3,7 +3,6 @@ package main
 import (
 	"net"
 	"fmt"
-	"log"
 	"container/heap"
 )
 
@@ -47,17 +46,25 @@ func (n *Node) recv(){
 	}
 	defer conn.Close()
 
-	for {
-		//buffer size is 1024 bytes
-		buf := make([]byte, 1024)
-		num,_,err3 := conn.ReadFromUDP(buf)
-		if err3 != nil {
-			log.Fatal(err3)
-		}
+	for status {
 
-		//deserialize the received data
-		msg := getMsgFromGob(buf[:num])
-		// push the message to inQueue
-		heap.Push(&n.inQueue, &msg)
+		c := make(chan Message)
+
+		go func() {
+			//buffer size is 1024 bytes
+			buf := make([]byte, 1024)
+			num,_,err3 := conn.ReadFromUDP(buf)
+			if err3 != nil {
+				fmt.Println(err3)
+			}
+			//deserialize the received data and output to channel
+			c <- getMsgFromGob(buf[:num])
+		}()
+
+		select {
+		case msg := <-c:
+			// push the message to inQueue
+			heap.Push(&n.inQueue, &msg)
+		}
 	}
 }
