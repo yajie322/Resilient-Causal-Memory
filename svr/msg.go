@@ -14,14 +14,14 @@ type Message struct {
 }
 
 // encode msg
-func getGobFromMsg(msg Message) bytes.Buffer {
+func getGobFromMsg(msg *Message) []byte {
 	var res bytes.Buffer
 
 	enc := gob.NewEncoder(&res)
-	if err := enc.Encode(msg); err != nil {
+	if err := enc.Encode(&msg); err != nil {
 		fmt.Println(err)
 	}
-	return res
+	return res.Bytes()
 }
 
 // decode msg

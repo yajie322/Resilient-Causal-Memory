@@ -4,14 +4,15 @@ import (
 	"net"
 	"fmt"
 	"log"
+	"container/heap"
 )
 
 // use udp to broadcast msg
-func (n *Node) broadcast(msg Message){
-	for _,addr := range n.mem_list {
-		if (entry.Id != n.id) {
-			//use gob to serialized data before sending
-			b := getGobFromMsg(msg)
+func broadcast(msg *Message){
+	//use gob to serialized data before sending
+	b := getGobFromMsg(msg)
+	for Id,addr := range mem_list {
+		if (Id != id) {
 			// resolve address
 			udpAddr,err1 := net.ResolveUDPAddr("udp4", addr)
 			if err1 != nil {
@@ -25,22 +26,13 @@ func (n *Node) broadcast(msg Message){
 				return
 			}
 			// send the data
-			conn.Write([]byte(b))
+			conn.Write(b)
 			conn.Close()
 		}
 	}
 }
 
-// To Do
-func (n *Node) send(){
-	for n.outQueue.Len() > 0 {
-		item := heap.Pop(&pq).(*Item)
-		msg := item.value
-		n.broadcast(msg)
-	}
-}
-
-// creates listener
+// recv action
 func (n *Node) recv(){
 	// resolve for udp address by membership list and id
 	udpAddr,err1 := net.ResolveUDPAddr("udp4", mem_list[id])
@@ -56,7 +48,6 @@ func (n *Node) recv(){
 	defer conn.Close()
 
 	for {
-		var msg Message
 		//buffer size is 1024 bytes
 		buf := make([]byte, 1024)
 		num,_,err3 := conn.ReadFromUDP(buf)
@@ -67,7 +58,6 @@ func (n *Node) recv(){
 		//deserialize the received data
 		msg := getMsgFromGob(buf[:num])
 		// push the message to inQueue
-		item := &Item{value: msg}
-		heap.Push(&n.inQueue, item)
+		heap.Push(&n.inQueue, &msg)
 	}
 }

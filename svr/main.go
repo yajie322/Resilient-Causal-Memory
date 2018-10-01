@@ -41,6 +41,8 @@ func main(){
 
     // start running
 	n.init(len(mem_list))
-	go n.send()
+	
 	go n.recv()
+    go n.send()
+    go n.apply()
 }
