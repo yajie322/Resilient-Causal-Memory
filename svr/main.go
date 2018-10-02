@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
-	"flag"
+	// "flag"
     // "sync"
 	"bufio"
 	"strings"
@@ -24,8 +24,7 @@ func main(){
     status = true
 
 	// get node id
-	flag.IntVar(&id, "id", 0, "specify the node id")
-
+	id,_ = strconv.Atoi(os.Getenv("id"))
 	// read config file
 	config, err := os.Open("config.txt")
     if err != nil {
