@@ -83,6 +83,7 @@ func (svr *Server) recv(){
 			case UPDATE:
 				recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 		}
+	}
 }
 
 
