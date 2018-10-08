@@ -55,7 +55,7 @@ func (n *Node) apply(){
 			msg := n.inQueue[0]
 			if n.compareTo(msg.Id, msg.Vec){
 				// pop
-				msg = heap.Pop(&n.outQueue).(*Message)
+				msg = heap.Pop(&n.inQueue).(*Message)
 				// update local vector clock
 				n.vec_clock[msg.Id] = msg.Vec[msg.Id]
 				// update memory
