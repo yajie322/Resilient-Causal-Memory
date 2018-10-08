@@ -31,6 +31,20 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int){
 	send(msg, mem_list[id])
 }
 
+func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) {
+	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
+	broadcast(msg)
+	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
+		time.Sleep(time.Millisecond)
+	}
+	msg := Message{Kind: ACK, Counter: counter}
+	send(msg, mem_list[id])
+}
+
+func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int) {
+
+}
+
 func (svr *Server) recv(){
 	// resolve for udp address by membership list and id
 	udpAddr,err1 := net.ResolveUDPAddr("udp4", mem_list[id])
@@ -59,10 +73,15 @@ func (svr *Server) recv(){
 			c <- getMsgFromGob(buf[:num])
 		}()
 
-		select {
-		case msg := <-c:
-			// push the message to inQueue
-			heap.Push(&n.inQueue, &msg)
+		msg := <-c
+		
+		select msg.Kind {
+			case READ:
+				recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
+			case WRITE:
+				recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+			case UPDATE:
+				recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 		}
 }
 

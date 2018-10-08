@@ -92,10 +92,13 @@ func (clt *Client) recv(){
 			c <- getMsgFromGob(buf[:num])
 		}()
 
-		select {
-		case msg := <-c:
-			// push the message to inQueue
-			heap.Push(&n.inQueue, &msg)
+		msg := <-c
+
+		select msg.Kind {
+			case RESP:
+				clt.recvRESP(msg.Counter, msg.Val, msg.Vec)
+			case ACK:
+				clt.recvACK(msg.Counter, msg.Vec)
 		}
 }
 
