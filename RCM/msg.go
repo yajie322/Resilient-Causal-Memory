@@ -12,8 +12,8 @@ type Message struct {
 	Key			int
 	Val			string
 	Vec			[]int
-	counter		int
-	m_data		map[int]string
+	Counter		int
+	M_data		map[int]string
 }
 
 // encode msg
