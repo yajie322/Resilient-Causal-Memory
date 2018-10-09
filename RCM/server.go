@@ -2,13 +2,12 @@ package main
 
 import {
 	"time"
-	//"github.com/golang-collections/go-datastructures/queue"	
 }
 
 type Server struct {
 	m_data		map[int]string
 	vec_clock	[]int
-	queue		PriorityQueue
+	queue		Queue
 }
 
 func (svr *Server) init(group_size int) {
@@ -20,7 +19,8 @@ func (svr *Server) init(group_size int) {
 	for i:= 0; i < group_size; i++ {
 		svr.vec_clock[i] = 0
 	}
-
+	// init queue
+	svr.queue.Init()
 }
 
 func (svr *Server) recvRead(key int, id int, counter int, vec_i []int){
@@ -89,7 +89,7 @@ func (svr *Server) recv(){
 
 func (svr *Server) update(){
 	for svr.queue.Len() > 0 {
-		msg := svr.queue[0] // This might need to be changed depending on the implementation of our queue
+		msg := svr.queue.Dequeue()
 		for svr.vec_clock[msg.Id] != msg.Vec[msg.Id]-1 || smallerEqualExceptI(msg.Vec, svr.vec_clock, msg.Id) {
 			time.Sleep(time.Millisecond)
 		}
