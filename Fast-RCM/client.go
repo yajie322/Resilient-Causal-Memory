@@ -31,11 +31,11 @@ func (clt *Client) init(group_size int) {
 func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(msg)
+	clt.counter += 1
 	for entry, isIn := clt.readBuf[clt.counter]; !isIn {
 		time.Sleep(time.Millisecond)
 	}
 	clt.merge_clock(entry.vec_clock)
-	clt.counter += 1
 	return entry.val
 }
 
@@ -110,4 +110,20 @@ func (clt *Client) merge_clock(vec []int) {
 	for i:=0; i<len(clt.vec_clock); i++ {
 		clt.vec_clock[i] = math.Max(clt.vec_clock[i], vec[i])
 	}
+}
+
+// helper function that return true if elements of vec1 are smaller than those of vec2 except i-th element; false otherwise
+func smallerEqualExceptI(vec1 []int, vec2 []int, i int) bool {
+	if len(vec1) != len(vec2) {
+		panic()
+	}
+	for index:=0; index<len(vec1); index++ {
+		if index == i {
+			continue
+		}
+		if vec1[index] > vec2[index] {
+			return false
+		}
+	}
+	return true
 }
