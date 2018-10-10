@@ -42,7 +42,7 @@ func (n *Node) write(key int, value string) {
 	// update key-value pair
 	n.m_data[key] = value
 	// create Message object and push to outQueue
-	msg := Message{Id: id, Key: key, Val:value,Vec: n.vec_clock}
+	msg := Message{Type: SERVER, Id: id, Key: key, Val:value,Vec: n.vec_clock}
 	heap.Push(&n.outQueue, &msg)
 }
 

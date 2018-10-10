@@ -3,12 +3,15 @@ package main
 import (
 	"os"
 	"fmt"
-	// "flag"
-    // "sync"
 	"bufio"
 	"strings"
     "strconv"
 )
+
+const SERVER = 0
+const CLIENT_WRITE = 1
+const CLIENT_READ = 2
+const CLIENT_ADDR = "127.0.0.1:8080"
 
 var(
 	id int
@@ -18,15 +21,8 @@ var(
 )
 
 func main(){
-	var n Node
-
-    // up and running
-    status = true
-
-	// get node id
-	id,_ = strconv.Atoi(os.Getenv("id"))
-	// read config file
-	config, err := os.Open("config.txt")
+    // read config file and get mem_list
+    config, err := os.Open("config.txt")
     if err != nil {
         fmt.Print(err)
         return
@@ -44,45 +40,26 @@ func main(){
     }
     config.Close()
 
-    // start running
-	n.init(len(mem_list))
-	
-	go n.recv()
-    go n.send()
-    go n.apply()
+    if os.Args[1] == "s" {
+        // // up and running
+        // status = true
+        
+        var n Node
+        // get node id
+        id,_ = strconv.Atoi(os.Getenv("id"))
 
-    n.userInput()
-}
+        // start running
+        n.init(len(mem_list))
+        
+        go n.recv()
+        go n.send()
+        go n.apply()
 
-func (n *Node) userInput(){
-    reader := bufio.NewReader(os.Stdin)
-    for {
-        fmt.Print("->")
-        // handle command line input
-        text,_ := reader.ReadString('\n')
-        text = strings.Replace(text, "\n", "", -1)
-        if strings.HasPrefix(text, "write"){
-            input := strings.SplitN(text, " ", 3)
-            
-            key, err := strconv.Atoi(input[1])
-            if err != nil {
-                fmt.Println(err)
-            }
-            // write
-            n.write(key, input[2])
-        } else if strings.HasPrefix(text, "read") {
-            key, err := strconv.Atoi(strings.SplitN(text, " ", 2)[1])
-            if err != nil {
-                fmt.Println(err)
-            }
-            // output read
-            fmt.Printf("\t%s\n",n.read(key))
-        } else {
-            // quit
-            // mutex.Lock()
-            status = false
-            // mutex.Unlock()
-            break
-        }
+    } else {
+        status = true
+        write_chan := make(chan bool)
+        read_chan := make(chan string)
+        go listener(write_chan, read_chan)
+        userInput(write_chan, read_chan)
     }
 }

@@ -7,6 +7,7 @@ import (
 )
 
 type Message struct {
+	Type 	int
 	Id		int
 	Key		int
 	Val		string
