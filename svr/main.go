@@ -11,7 +11,7 @@ import (
 const SERVER = 0
 const CLIENT_WRITE = 1
 const CLIENT_READ = 2
-const CLIENT_ADDR = "127.0.0.1:8080"
+const CLIENT_ADDR = "172.17.0.6:8080"
 
 var(
 	id int
@@ -40,7 +40,9 @@ func main(){
     }
     config.Close()
 
-    if os.Args[1] == "s" {
+    status = true
+
+    if os.Getenv("type") == "s" {
         // // up and running
         // status = true
         
@@ -51,12 +53,15 @@ func main(){
         // start running
         n.init(len(mem_list))
         
-        go n.recv()
+        done := make(chan bool)
+
+        go n.recv(done)
         go n.send()
         go n.apply()
 
+        <-done
+
     } else {
-        status = true
         write_chan := make(chan bool)
         read_chan := make(chan string)
         go listener(write_chan, read_chan)

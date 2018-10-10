@@ -47,7 +47,7 @@ func (n *Node) write(key int, value string) {
 }
 
 // apply action
-func (n *Node) apply(){
+func (n *Node) apply(done chan bool){
 	for status {
 		// while inqueue is not empty, compare it and update
 		for n.inQueue.Len() > 0 {

@@ -1,6 +1,7 @@
 FROM golang
 
 ENV id=0
+ENV type = s
 
 RUN mkdir /svr
 WORKDIR /svr

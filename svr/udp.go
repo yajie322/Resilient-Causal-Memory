@@ -48,7 +48,7 @@ func send(msg *Message, addr string){
 }
 
 // recv action
-func (n *Node) recv(){
+func (n *Node) recv(done chan bool){
 	// resolve for udp address by membership list and id
 	udpAddr,err1 := net.ResolveUDPAddr("udp4", mem_list[id])
 	if err1 != nil {
@@ -62,7 +62,7 @@ func (n *Node) recv(){
 	}
 	defer conn.Close()
 
-	for status {
+	for {
 
 		c := make(chan Message)
 
@@ -86,9 +86,13 @@ func (n *Node) recv(){
 				n.write(msg.Key, msg.Val)
 				rep := Message{Type: CLIENT_WRITE, Id: -1, Key: 0, Val: "", Vec: make([]int,1)}
 				send(&rep, CLIENT_ADDR)
-			} else {
+			} else if msg.Type == CLIENT_READ{
 				rep := Message{Type: CLIENT_READ, Id: -1, Key: msg.Key, Val: n.read(msg.Key), Vec: make([]int,1)}
 				send(&rep, CLIENT_ADDR)
+			} else{
+				status = false
+				done<-true
+				break
 			}
 			
 		}
