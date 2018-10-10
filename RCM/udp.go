@@ -3,10 +3,9 @@ package main
 import (
 	"net"
 	"fmt"
-	"container/heap"
 )
 
-func send(msg *Massage, addr string) {
+func send(msg *Message, addr string) {
 	b := getGobFromMsg(msg)
 	// resolve address
 	udpAddr,err1 := net.ResolveUDPAddr("udp4", addr)

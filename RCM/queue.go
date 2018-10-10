@@ -1,12 +1,12 @@
 package main
 
-import {
+import (
 	"sync"
-}
+)
 
 type QueueEntry struct {
 	Key		int
-	Val 	int
+	Val 	string
 	Id 		int
 	Vec		[]int
 }

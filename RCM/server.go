@@ -1,13 +1,21 @@
 package main
 
-import {
+import (
 	"time"
+	"net"
+	"fmt"
+)
+
+type WitnessEntry struct {
+	id 		int
+	counter int
 }
 
 type Server struct {
 	m_data		map[int]string
 	vec_clock	[]int
 	queue		Queue
+	witness 	map[WitnessEntry]int
 }
 
 func (svr *Server) init(group_size int) {
@@ -21,30 +29,54 @@ func (svr *Server) init(group_size int) {
 	}
 	// init queue
 	svr.queue.Init()
+	// init witness
+	svr.witness = make(map[WitnessEntry] int)
 }
 
+// Actions to take if server receives READ message
 func (svr *Server) recvRead(key int, id int, counter int, vec_i []int){
+	// wait until t_server is greater than t_i
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
 		time.Sleep(time.Millisecond)
 	}
+	// send RESP message to client i
 	msg := Message{Kind: RESP, Counter: counter, Val: svr.m_data[key], Vec: svr.vec_clock}
-	send(msg, mem_list[id])
+	send(&msg, mem_list[id])
 }
 
+// Actions to take if server receives WRITE message
 func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) {
+	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-	broadcast(msg)
+	broadcast(&msg)
+	// wait until t_server is greater than t_i
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
 		time.Sleep(time.Millisecond)
 	}
-	msg := Message{Kind: ACK, Counter: counter}
-	send(msg, mem_list[id])
+	// send ACK message to client i
+	msg = Message{Kind: ACK, Counter: counter}
+	send(&msg, mem_list[id])
 }
 
+// Actions to take if server receives UPDATE message
 func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int) {
-
+	entry := WitnessEntry{id: id, counter: counter}
+	if _, isIn := svr.witness[entry]; isIn {
+		svr.witness[entry] += 1
+	} else {
+		svr.witness[entry] = 1
+	}
+	if svr.witness[entry] == 1 {
+		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
+		broadcast(&msg)
+	}
+	if svr.witness[entry] == F+1 {
+		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
+		svr.queue.Enqueue(queue_entry)
+	}
 }
 
+// Server listener
 func (svr *Server) recv(){
 	// resolve for udp address by membership list and id
 	udpAddr,err1 := net.ResolveUDPAddr("udp4", mem_list[id])
@@ -75,21 +107,22 @@ func (svr *Server) recv(){
 
 		msg := <-c
 		
-		select msg.Kind {
-			case READ:
-				recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
-			case WRITE:
-				recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
-			case UPDATE:
-				recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+		switch msg.Kind {
+		case READ:
+			go svr.recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
+		case WRITE:
+			go svr.recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+		case UPDATE:
+			go svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 		}
 	}
 }
 
-
+// infinitely often update the local storage
 func (svr *Server) update(){
 	for svr.queue.Len() > 0 {
 		msg := svr.queue.Dequeue()
+		// wait until it's time to update
 		for svr.vec_clock[msg.Id] != msg.Vec[msg.Id]-1 || smallerEqualExceptI(msg.Vec, svr.vec_clock, msg.Id) {
 			time.Sleep(time.Millisecond)
 		}
@@ -102,7 +135,7 @@ func (svr *Server) update(){
 // helper function that return true if elements of vec1 are smaller than those of vec2 except i-th element; false otherwise
 func smallerEqualExceptI(vec1 []int, vec2 []int, i int) bool {
 	if len(vec1) != len(vec2) {
-		panic()
+		panic("vector clocks are of different lengths")
 	}
 	for index:=0; index<len(vec1); index++ {
 		if index == i {
