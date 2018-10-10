@@ -6,10 +6,16 @@ import (
 	"fmt"
 )
 
+type WitnessEntry struct {
+	id 		int
+	counter int
+}
+
 type Server struct {
 	m_data		map[int]string
 	vec_clock	[]int
 	queue		Queue
+	witness 	map[WitnessEntry]int
 }
 
 func (svr *Server) init(group_size int) {
@@ -23,6 +29,8 @@ func (svr *Server) init(group_size int) {
 	}
 	// init queue
 	svr.queue.Init()
+	// init witness
+	svr.witness = make(map[WitnessEntry] int)
 }
 
 // Actions to take if server receives READ message
@@ -52,7 +60,20 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 
 // Actions to take if server receives UPDATE message
 func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int) {
-
+	entry := WitnessEntry{id: id, counter: counter}
+	if _, isIn := svr.witness[entry]; isIn {
+		svr.witness[entry] += 1
+	} else {
+		svr.witness[entry] = 1
+	}
+	if svr.witness[entry] == 1 {
+		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
+		broadcast(&msg)
+	}
+	if svr.witness[entry] == F+1 {
+		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
+		svr.queue.Enqueue(queue_entry)
+	}
 }
 
 // Server listener
