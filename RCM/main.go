@@ -19,14 +19,8 @@ var(
 )
 
 func main(){
-    node_type,_ = os.Getenv("type")
+    node_type = os.Getenv("type")
 
-    switch node_type {
-        case "server":
-            var node Server
-        case "client":
-            var node Client
-    }
     // up and running
     status = true
 
@@ -51,17 +45,18 @@ func main(){
     }
     config.Close()
 
-    // start running
-	node.init(len(mem_list))
-	
-	go node.recv()
-
     switch node_type {
-        case "client":
-            node.userInput()
-        case "server":
-            done := make(chan bool)
-            <- done
+    case "server":
+        var node Server
+        node.init(len(mem_list))
+        go node.recv()
+        done := make(chan bool)
+        <- done
+    case "client":
+        var node Client
+        node.init(len(mem_list))
+        go node.recv()
+        node.userInput()
     }
 }
 
@@ -80,14 +75,14 @@ func (clt *Client) userInput(){
                 fmt.Println(err)
             }
             // write
-            clt.write(key, input[2])
+            go clt.write(key, input[2])
         } else if strings.HasPrefix(text, "read") {
             key, err := strconv.Atoi(strings.SplitN(text, " ", 2)[1])
             if err != nil {
                 fmt.Println(err)
             }
             // output read
-            fmt.Printf("\t%s\n",clt.read(key))
+            fmt.Printf("\t%s\n", clt.read(key))
         } else {
             // quit
             // mutex.Lock()
