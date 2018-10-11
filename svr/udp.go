@@ -99,7 +99,7 @@ func (n *Node) recv(done chan bool){
 	}
 }
 
-func listener(write_chan chan bool, read_chan chan string){
+func listener(){
 	// resolve for udp address by membership list and id
 	udpAddr,err1 := net.ResolveUDPAddr("udp4", CLIENT_ADDR)
 	if err1 != nil {

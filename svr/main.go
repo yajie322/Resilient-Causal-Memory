@@ -19,6 +19,8 @@ var (
 	// mutex = new(sync.mutex)
 	mem_list = make(map[int]string)
 	status   bool
+	write_chan = make(chan bool)
+	read_chan = make(chan string)
 )
 
 func main() {
@@ -63,9 +65,8 @@ func main() {
 		<-done
 
 	} else {
-		write_chan := make(chan bool)
-		read_chan := make(chan string)
-		go listener(write_chan, read_chan)
-		userInput(write_chan, read_chan)
+		go listener()
+		userInput()
+		// workload()
 	}
 }

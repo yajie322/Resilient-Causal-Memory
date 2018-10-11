@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func userInput(write_chan chan bool, read_chan chan string) {
+func userInput() {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("->")
@@ -24,14 +24,14 @@ func userInput(write_chan chan bool, read_chan chan string) {
 				fmt.Println(err)
 			}
 			// write
-			write(key, input[2], write_chan)
+			write(key, input[2])
 		} else if strings.HasPrefix(text, "read") {
 			key, err := strconv.Atoi(strings.SplitN(text, " ", 2)[1])
 			if err != nil {
 				fmt.Println(err)
 			}
 			// output read
-			fmt.Printf("\t%s\n", read(key, read_chan))
+			fmt.Printf("\t%s\n", read(key))
 		} else {
 			status = false
 			msg := Message{Type: QUIT, Id: 0, Key: 0, Val: "", Vec: make([]int, 1)}
@@ -41,7 +41,7 @@ func userInput(write_chan chan bool, read_chan chan string) {
 	}
 }
 
-func write(key int, value string, done chan bool) {
+func write(key int, value string) {
 	// create message object
 	msg := Message{Type: CLIENT_WRITE, Id: 0, Key: key, Val: value, Vec: make([]int, 1)}
 	// chose server
@@ -49,11 +49,11 @@ func write(key int, value string, done chan bool) {
 	// send
 	send(&msg, mem_list[chosen])
 	// get result from listener
-	<-done
+	<-write_chan
 	return
 }
 
-func read(key int, done chan string) string {
+func read(key int) string {
 	// create message object
 	msg := Message{Type: CLIENT_READ, Id: 0, Key: key, Val: "", Vec: make([]int, 1)}
 	// chose server
@@ -61,5 +61,5 @@ func read(key int, done chan string) string {
 	// send
 	send(&msg, mem_list[chosen])
 	// get result from listener
-	return <-done
+	return <-read_chan
 }
