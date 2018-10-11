@@ -3,4 +3,5 @@
 ```
 make
 make run
+make client
 ```
