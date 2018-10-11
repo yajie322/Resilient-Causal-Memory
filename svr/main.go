@@ -11,8 +11,8 @@ import (
 const SERVER = 0
 const CLIENT_WRITE = 1
 const CLIENT_READ = 2
-const CLIENT_ADDR = "172.17.0.6:8080"
 const QUIT = 3
+const CLIENT_ADDR = "172.17.0.6:8080"
 
 var (
 	id int
