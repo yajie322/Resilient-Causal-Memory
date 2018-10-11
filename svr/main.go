@@ -1,70 +1,71 @@
 package main
 
 import (
-	"os"
-	"fmt"
 	"bufio"
+	"fmt"
+	"os"
+	"strconv"
 	"strings"
-    "strconv"
 )
 
 const SERVER = 0
 const CLIENT_WRITE = 1
 const CLIENT_READ = 2
 const CLIENT_ADDR = "172.17.0.6:8080"
+const QUIT = 3
 
-var(
+var (
 	id int
-    // mutex = new(sync.mutex)
+	// mutex = new(sync.mutex)
 	mem_list = make(map[int]string)
-    status bool
+	status   bool
 )
 
-func main(){
-    // read config file and get mem_list
-    config, err := os.Open("config.txt")
-    if err != nil {
-        fmt.Print(err)
-        return
-    }
-    scanner := bufio.NewScanner(config)
-    for scanner.Scan() {
-        line := strings.Split(scanner.Text(), " ")
-        id, err := strconv.Atoi(line[0])
-        if err != nil {
-            fmt.Println(err)
-            return
-        }
-        addr := line[1]
-        mem_list[id] = addr
-    }
-    config.Close()
+func main() {
+	// read config file and get mem_list
+	config, err := os.Open("config.txt")
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+	scanner := bufio.NewScanner(config)
+	for scanner.Scan() {
+		line := strings.Split(scanner.Text(), " ")
+		id, err := strconv.Atoi(line[0])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		addr := line[1]
+		mem_list[id] = addr
+	}
+	config.Close()
 
-    status = true
+	status = true
 
-    if os.Getenv("type") == "s" {
-        // // up and running
-        // status = true
-        
-        var n Node
-        // get node id
-        id,_ = strconv.Atoi(os.Getenv("id"))
+	if os.Getenv("type") == "s" {
+		// // up and running
+		// status = true
 
-        // start running
-        n.init(len(mem_list))
-        
-        done := make(chan bool)
+		var n Node
+		// get node id
+		id, _ = strconv.Atoi(os.Getenv("id"))
 
-        go n.recv(done)
-        go n.send()
-        go n.apply()
+		// start running
+		n.init(len(mem_list))
 
-        <-done
+		done := make(chan bool)
 
-    } else {
-        write_chan := make(chan bool)
-        read_chan := make(chan string)
-        go listener(write_chan, read_chan)
-        userInput(write_chan, read_chan)
-    }
+		go n.recv(done)
+		go n.send()
+		go n.apply()
+
+		<-done
+
+	} else {
+		write_chan := make(chan bool)
+		read_chan := make(chan string)
+		go listener(write_chan, read_chan)
+		userInput(write_chan, read_chan)
+	}
 }
