@@ -3,7 +3,8 @@ package main
 import (
 	"os"
 	"fmt"
-	// "flag"
+	"flag"
+    "time"
     // "sync"
 	"bufio"
 	"strings"
@@ -19,13 +20,16 @@ var(
 )
 
 func main(){
-    node_type = os.Getenv("type")
+    //node_type = os.Getenv("type")
+    flag.StringVar(&node_type, "type", "server", "specify the node type")
 
     // up and running
     status = true
 
 	// get node id
-	id,_ = strconv.Atoi(os.Getenv("id"))
+	// id,_ = strconv.Atoi(os.Getenv("id"))
+    flag.IntVar(&id, "id", 0, "specify the node id")
+    flag.Parse()
 	// read config file
 	config, err := os.Open("config.txt")
     if err != nil {
@@ -51,7 +55,15 @@ func main(){
         node.init(len(mem_list))
         go node.recv()
         done := make(chan bool)
-        <- done
+        for status {
+            select {
+            case <- done:
+                fmt.Println("quit")
+            default:
+                go node.update()
+                time.Sleep(time.Millisecond)
+            }
+        }
     case "client":
         var node Client
         node.init(len(mem_list))
@@ -75,7 +87,7 @@ func (clt *Client) userInput(){
                 fmt.Println(err)
             }
             // write
-            go clt.write(key, input[2])
+            clt.write(key, input[2])
         } else if strings.HasPrefix(text, "read") {
             key, err := strconv.Atoi(strings.SplitN(text, " ", 2)[1])
             if err != nil {

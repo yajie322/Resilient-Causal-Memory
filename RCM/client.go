@@ -14,19 +14,22 @@ type ReadBufEntry struct {
 type Client struct {
 	vec_clock	[]int
 	counter		int
-	writer_ts	map[int][]int
+	writer_ts	map[int]map[int][]int
 	readBuf 	map[int]ReadBufEntry
 }
 
 func (clt *Client) init(group_size int) {
 	// init vector timestamp with length group_size
 	clt.vec_clock = make([]int, group_size)
+	// set vector timestamp to zero
+	for i:= 0; i < group_size; i++ {
+		clt.vec_clock[i] = 0
+	}
 	clt.counter = 0
 	// init writer_ts as counter(int) - timestamp([]int) pairs
-	clt.writer_ts = make(map[int] []int)
+	clt.writer_ts = make(map[int] map[int][]int)
 	// init read buffer as counter(int) - (value, timestamp) tuple (ReadBufEntry) pairs
 	clt.readBuf = make(map[int] ReadBufEntry)
-
 }
 
 func (clt *Client) read(key int) string {
@@ -35,7 +38,7 @@ func (clt *Client) read(key int) string {
 	entry, isIn := clt.readBuf[clt.counter]
 	for !isIn {
 		time.Sleep(time.Millisecond)
-		entry, isIn := clt.readBuf[clt.counter]
+		entry, isIn = clt.readBuf[clt.counter]
 	}
 	clt.merge_clock(entry.vec_clock)
 	clt.counter += 1
@@ -43,31 +46,33 @@ func (clt *Client) read(key int) string {
 }
 
 func (clt *Client) write(key int, value string) {
+	clt.vec_clock[id] += 1
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
-	for clt.writer_ts[clt.counter] <= F {
+	for len(clt.writer_ts[clt.counter]) <= F {
 		time.Sleep(time.Millisecond)
 	}
-	clt.merge_clock(clt.writer_ts[clt.counter])
+	fmt.Println(clt.writer_ts[clt.counter])
+	// merge all elements of writer_ts[counter] with local vector clock
+	for _,vec := range clt.writer_ts[clt.counter] {
+		clt.merge_clock(vec)
+	}
 	clt.counter += 1
-	// return WRITE-ACK
 }
 
 // Actions to take if receive RESP message
 func (clt *Client) recvRESP(counter int, val string, vec []int) {
 	entry := ReadBufEntry{val: val, vec_clock: vec}
-	if _, isIn := clt.readBuf[counter]; isIn {
-		// panic()
-	}
 	clt.readBuf[counter] = entry
 }
 
 // Actions to take if receive ACK message
 func (clt *Client) recvACK(counter int, vec []int) {
-	if _, isIn := clt.writer_ts[counter]; isIn {
-		// panic()
+	if _, isIn := clt.writer_ts[counter]; !isIn {
+		clt.writer_ts[counter] = make(map[int] []int)
 	}
-	clt.writer_ts[counter] = vec
+	fmt.Println("ACK message received vec", vec)
+	clt.writer_ts[counter][len(clt.writer_ts[counter])] = vec
 }
 
 // Client listener
@@ -113,6 +118,8 @@ func (clt *Client) recv(){
 // helper function that merges a vector clock with client's own vector clock
 func (clt *Client) merge_clock(vec []int) {
 	if len(clt.vec_clock) != len(vec) {
+		fmt.Println(clt.vec_clock)
+		fmt.Println(vec)
 		panic("vector clocks are of different lengths")
 	}
 	for i:=0; i<len(clt.vec_clock); i++ {

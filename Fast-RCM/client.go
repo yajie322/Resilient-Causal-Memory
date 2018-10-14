@@ -13,55 +13,66 @@ type ReadBufEntry struct {
 type Client struct {
 	vec_clock	[]int
 	counter		int
-	writer_ts	map[int][]int
 	readBuf 	map[int]ReadBufEntry
+	writeBuf	map[int][]int
+	localBuf	map[int]string
 }
 
 func (clt *Client) init(group_size int) {
 	// init vector timestamp with length group_size
 	clt.vec_clock = make([]int, group_size)
+	for i:= 0; i < group_size; i++ {
+		clt.vec_clock[i] = 0
+	}
 	clt.counter = 0
-	// init writer_ts as counter(int) - timestamp([]int) pairs
-	clt.writer_ts = make(map[int], []int)
 	// init read buffer as counter(int) - (value, timestamp) tuple (ReadBufEntry) pairs
 	clt.readBuf = make(map[int], ReadBufEntry)
-
+	clt.writeBuf = make(map[int], []int)
 }
 
 func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
-	broadcast(msg)
+	broadcast(&msg)
 	clt.counter += 1
 	for entry, isIn := clt.readBuf[clt.counter]; !isIn {
 		time.Sleep(time.Millisecond)
 	}
-	clt.merge_clock(entry.vec_clock)
-	return entry.val
+	if smallerEqualExceptI(entry.vec_clock, clt.vec_clock, 999999) {
+		if val, isIn := localBuf[key]; !isIn {
+			panic("value is not in local buffer")
+			return "Error"
+		}
+		return val
+	} else {
+		clt.merge_clock(entry.vec_clock)
+		return entry.val
+	}
 }
 
 func (clt *Client) write(key int, value string) {
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
-	broadcast(msg)
-	for writer_ts[clt.counter] <= F {
+	broadcast(&msg)
+	counter += 1
+	for entry, isIn := clt.writeBuf[clt.counter]; !isIn {
 		time.Sleep(time.Millisecond)
 	}
 	clt.merge_clock(clt.writer_ts[clt.counter])
-	counter += 1
+	clt.localBuf[key] = value
 	// return WRITE-ACK
 }
 
 func (clt *Client) recvRESP(counter int, val string, vec []int) {
 	entry := ReadBufEntry{val: val, vec_clock: vec}
 	if _, isIn := clt.readBuf[counter]; isIn {
-		panic()
+		panic(val, " is already in the read buffer")
 	}
 	clt.readBuf[counter] = entry
 }
 func (clt *Client) recvACK(counter int, vec []int) {
-	if _, isIn := clt.writer_ts[counter]; isIn {
-		panic()
+	if _, isIn := clt.writeBuf[counter]; isIn {
+		panic("write operation ", counter, " is already in the write buffer")
 	}
-	writer_ts[counter] = vec
+	writeBuf[counter] = vec
 }
 
 func (clt *Client) recv(){

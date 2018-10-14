@@ -54,7 +54,7 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 		time.Sleep(time.Millisecond)
 	}
 	// send ACK message to client i
-	msg = Message{Kind: ACK, Counter: counter}
+	msg = Message{Kind: ACK, Counter: counter, Vec: svr.vec_clock}
 	send(&msg, mem_list[id])
 }
 
@@ -123,12 +123,15 @@ func (svr *Server) update(){
 	for svr.queue.Len() > 0 {
 		msg := svr.queue.Dequeue()
 		// wait until it's time to update
-		for svr.vec_clock[msg.Id] != msg.Vec[msg.Id]-1 || smallerEqualExceptI(msg.Vec, svr.vec_clock, msg.Id) {
+		fmt.Println(msg.Vec)
+		fmt.Println(svr.vec_clock)
+		for svr.vec_clock[msg.Id] < msg.Vec[msg.Id]-1 || !smallerEqualExceptI(msg.Vec, svr.vec_clock, msg.Id) {
 			time.Sleep(time.Millisecond)
 		}
 		// update timestamp and write to local memory
 		svr.vec_clock[msg.Id] = msg.Vec[msg.Id]
 		svr.m_data[msg.Key] = msg.Val
+		fmt.Println("server ", id, " has m_data: ", svr.m_data)
 	}
 }
 
