@@ -1,9 +1,9 @@
 package main
 
-READ = 1
-WRITE = 2
-UPDATE = 3
-RESP = 4
-ACK = 5
+const READ = 1
+const WRITE = 2
+const UPDATE = 3
+const RESP = 4
+const ACK = 5
 
-F = 1
+const F = 1

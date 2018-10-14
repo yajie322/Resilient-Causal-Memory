@@ -1,8 +1,10 @@
 package main
 
-import {
+import (
 	"time"
-}
+	"net"
+	"fmt"
+)
 
 type WitnessEntry struct {
 	id 		int
@@ -39,7 +41,7 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int){
 func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) {
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 	broadcast(&msg)
-	msg := Message{Kind: ACK, Counter: counter}
+	msg = Message{Kind: ACK, Counter: counter, Vec: svr.vec_clock}
 	send(&msg, mem_list[id])
 }
 
@@ -91,11 +93,11 @@ func (svr *Server) recv(){
 
 		msg := <-c
 		
-		select msg.Kind {
+		switch msg.Kind {
 			case READ:
-				recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
+				go svr.recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
 			case WRITE:
-				recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+				go svr.recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 			case UPDATE:
 				go svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 		}

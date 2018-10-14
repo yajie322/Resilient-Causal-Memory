@@ -1,13 +1,15 @@
 package main
 
-import {
+import (
 	"time"
-	"math"
-}
+	"net"
+	"fmt"
+	// "strconv"
+)
 
 type ReadBufEntry struct {
 	val 		string
-	vec_clock	int[]
+	vec_clock	[]int
 }
 
 type Client struct {
@@ -26,19 +28,23 @@ func (clt *Client) init(group_size int) {
 	}
 	clt.counter = 0
 	// init read buffer as counter(int) - (value, timestamp) tuple (ReadBufEntry) pairs
-	clt.readBuf = make(map[int], ReadBufEntry)
-	clt.writeBuf = make(map[int], []int)
+	clt.readBuf = make(map[int] ReadBufEntry)
+	clt.writeBuf = make(map[int] []int)
+	clt.localBuf = make(map[int] string)
 }
 
 func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
-	clt.counter += 1
-	for entry, isIn := clt.readBuf[clt.counter]; !isIn {
+	entry, isIn := clt.readBuf[clt.counter]
+	for !isIn {
 		time.Sleep(time.Millisecond)
+		entry, isIn = clt.readBuf[clt.counter]
 	}
+	clt.counter += 1
 	if smallerEqualExceptI(entry.vec_clock, clt.vec_clock, 999999) {
-		if val, isIn := localBuf[key]; !isIn {
+		val, isIn := clt.localBuf[key]
+		if !isIn {
 			panic("value is not in local buffer")
 			return "Error"
 		}
@@ -52,27 +58,26 @@ func (clt *Client) read(key int) string {
 func (clt *Client) write(key int, value string) {
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
-	counter += 1
-	for entry, isIn := clt.writeBuf[clt.counter]; !isIn {
+	entry, isIn := clt.writeBuf[clt.counter]
+	for !isIn {
 		time.Sleep(time.Millisecond)
+		entry, isIn = clt.writeBuf[clt.counter]
 	}
-	clt.merge_clock(clt.writer_ts[clt.counter])
+	clt.merge_clock(entry)
 	clt.localBuf[key] = value
+	clt.counter += 1
 	// return WRITE-ACK
 }
 
 func (clt *Client) recvRESP(counter int, val string, vec []int) {
 	entry := ReadBufEntry{val: val, vec_clock: vec}
-	if _, isIn := clt.readBuf[counter]; isIn {
-		panic(val, " is already in the read buffer")
-	}
 	clt.readBuf[counter] = entry
 }
 func (clt *Client) recvACK(counter int, vec []int) {
-	if _, isIn := clt.writeBuf[counter]; isIn {
-		panic("write operation ", counter, " is already in the write buffer")
-	}
-	writeBuf[counter] = vec
+	// if _, isIn := clt.writeBuf[counter]; isIn {
+	// 	panic("write operation " + strconv.Itoa(counter) + " is already in the write buffer")
+	// }
+	clt.writeBuf[counter] = vec
 }
 
 func (clt *Client) recv(){
@@ -105,7 +110,7 @@ func (clt *Client) recv(){
 
 		msg := <-c
 
-		select msg.Kind {
+		switch msg.Kind {
 			case RESP:
 				clt.recvRESP(msg.Counter, msg.Val, msg.Vec)
 			case ACK:
@@ -116,25 +121,11 @@ func (clt *Client) recv(){
 
 func (clt *Client) merge_clock(vec []int) {
 	if len(clt.vec_clock) != len(vec) {
-		panic()
+		panic("vector clocks are of different lengths")
 	}
 	for i:=0; i<len(clt.vec_clock); i++ {
-		clt.vec_clock[i] = math.Max(clt.vec_clock[i], vec[i])
-	}
-}
-
-// helper function that return true if elements of vec1 are smaller than those of vec2 except i-th element; false otherwise
-func smallerEqualExceptI(vec1 []int, vec2 []int, i int) bool {
-	if len(vec1) != len(vec2) {
-		panic()
-	}
-	for index:=0; index<len(vec1); index++ {
-		if index == i {
-			continue
-		}
-		if vec1[index] > vec2[index] {
-			return false
+		if vec[i] > clt.vec_clock[i] {
+			clt.vec_clock[i] = vec[i]
 		}
 	}
-	return true
 }
