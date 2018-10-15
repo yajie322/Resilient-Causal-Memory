@@ -60,19 +60,19 @@ func (n *Node) apply() {
 		// for n.inQueue.Len() > 0 {
 		// pop
 		// msg := *heap.Pop(&n.inQueue).(*Message)
-		mutex.Lock()
-		msg := <- n.inQueue
-		mutex.Unlock()
-		if n.compareTo(msg.Id, msg.Vec) {
-			// update local vector clock
-			n.vec_clock[msg.Id] = msg.Vec[msg.Id]
-			// update memory
-			n.m_data[msg.Key] = msg.Val
-		} else {
-			// heap.Push(&n.inQueue, &msg)
-			mutex.Lock()
-			n.inQueue <- msg
-			mutex.Unlock()
+		select {
+		case msg := <- n.inQueue:
+			if n.compareTo(msg.Id, msg.Vec) {
+				// update local vector clock
+				n.vec_clock[msg.Id] = msg.Vec[msg.Id]
+				// update memory
+				n.m_data[msg.Key] = msg.Val
+			} else {
+				// heap.Push(&n.inQueue, &msg)
+				mutex.Lock()
+				n.inQueue <- msg
+				mutex.Unlock()
+			}
 		}
 		// }
 		// wait for inqueue to be non-empty
@@ -87,11 +87,11 @@ func (n *Node) send() {
 		// for n.outQueue.Len() > 0 {
 		// pop
 		// msg := heap.Pop(&n.outQueue).(*Message)
-		mutex.Lock()
-		msg := <- n.outQueue
-		mutex.Unlock()
-		// broadcast
-		broadcast(&msg)
+		select {
+		case msg := <- n.outQueue:
+			// broadcast
+			broadcast(&msg)
+		}
 		// }
 		// wait for outqueue to be non-empty
 		// time.Sleep(10 * time.Millisecond)

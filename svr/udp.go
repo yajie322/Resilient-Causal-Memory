@@ -79,6 +79,7 @@ func (n *Node) recv(done chan bool){
 
 		select {
 		case msg := <-c:
+			fmt.Println(msg)
 			if msg.Type == SERVER {
 				// push the message to inQueue
 				// heap.Push(&n.inQueue, &msg)
@@ -133,7 +134,7 @@ func listener(){
 
 		select {
 		case msg := <-c:
-			// fmt.Println(msg)
+			fmt.Println(msg)
 			if msg.Type == CLIENT_WRITE {
 				write_chan <- true
 			} else {
