@@ -46,7 +46,7 @@ func main() {
 			return
 		}
 		addr := line[1]
-		if id < 4{
+		if id < 3{
 			svr_list[id] = addr
 		} else {
 			clt_list[id] = addr

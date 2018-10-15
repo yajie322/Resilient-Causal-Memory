@@ -84,10 +84,10 @@ func (n *Node) recv(done chan bool){
 				heap.Push(&n.inQueue, &msg)
 			} else if msg.Type == CLIENT_WRITE {
 				n.write(msg.Key, msg.Val)
-				rep := Message{Type: CLIENT_WRITE, Id: -1, Key: 0, Val: "", Vec: make([]int,1)}
+				rep := Message{Type: CLIENT_WRITE, Id: id, Key: 0, Val: "", Vec: make([]int,1)}
 				send(&rep, clt_list[msg.Id])
 			} else if msg.Type == CLIENT_READ{
-				rep := Message{Type: CLIENT_READ, Id: -1, Key: msg.Key, Val: n.read(msg.Key), Vec: make([]int,1)}
+				rep := Message{Type: CLIENT_READ, Id: id, Key: msg.Key, Val: n.read(msg.Key), Vec: make([]int,1)}
 				send(&rep, clt_list[msg.Id])
 			} else{
 				status = false
@@ -130,6 +130,7 @@ func listener(){
 
 		select {
 		case msg := <-c:
+			fmt.Println(msg)
 			if msg.Type == CLIENT_WRITE {
 				write_chan <- true
 			} else {
