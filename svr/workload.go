@@ -61,9 +61,7 @@ func workload(num int){
 	var WTotal, RTotal int = 0, 0
 
 	// insert value into table before start testing
-	for i := 0; i < num; i++{
-		initWrite(i%10)
-	}
+	initWrite(10)
 
 	for i := 0; i < num; i++ {
 		temp := rand.Float64()

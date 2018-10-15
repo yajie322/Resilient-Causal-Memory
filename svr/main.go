@@ -16,7 +16,7 @@ const QUIT = 3
 
 var (
 	id int
-	// mutex = new(sync.mutex)
+	mutex = new(sync.mutex)
 	svr_list = make(map[int]string)
 	clt_list = make(map[int]string)
 	status   bool
