@@ -66,7 +66,7 @@ func main() {
 
 	} else {
 		go listener()
-		userInput()
-		// workload()
+		// userInput()
+		workload(10000)
 	}
 }
