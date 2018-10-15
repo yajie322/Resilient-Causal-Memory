@@ -10,7 +10,7 @@ import (
 func broadcast(msg *Message){
 	//use gob to serialized data before sending
 	b := getGobFromMsg(msg)
-	for Id,addr := range mem_list {
+	for Id,addr := range svr_list {
 		if (Id != id) {
 			// resolve address
 			udpAddr,err1 := net.ResolveUDPAddr("udp4", addr)
@@ -50,7 +50,7 @@ func send(msg *Message, addr string){
 // recv action
 func (n *Node) recv(done chan bool){
 	// resolve for udp address by membership list and id
-	udpAddr,err1 := net.ResolveUDPAddr("udp4", mem_list[id])
+	udpAddr,err1 := net.ResolveUDPAddr("udp4", svr_list[id])
 	if err1 != nil {
 		fmt.Println("address not found")
 	}
@@ -85,10 +85,10 @@ func (n *Node) recv(done chan bool){
 			} else if msg.Type == CLIENT_WRITE {
 				n.write(msg.Key, msg.Val)
 				rep := Message{Type: CLIENT_WRITE, Id: -1, Key: 0, Val: "", Vec: make([]int,1)}
-				send(&rep, CLIENT_ADDR)
+				send(&rep, clt_list[msg.Id])
 			} else if msg.Type == CLIENT_READ{
 				rep := Message{Type: CLIENT_READ, Id: -1, Key: msg.Key, Val: n.read(msg.Key), Vec: make([]int,1)}
-				send(&rep, CLIENT_ADDR)
+				send(&rep, clt_list[msg.Id])
 			} else{
 				status = false
 				done<-true
@@ -101,7 +101,7 @@ func (n *Node) recv(done chan bool){
 
 func listener(){
 	// resolve for udp address by membership list and id
-	udpAddr,err1 := net.ResolveUDPAddr("udp4", CLIENT_ADDR)
+	udpAddr,err1 := net.ResolveUDPAddr("udp4", clt_list[id])
 	if err1 != nil {
 		fmt.Println("address not found")
 	}

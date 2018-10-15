@@ -4,14 +4,14 @@ import(
 	"strconv"
 	"fmt"
 	"time"
-	"sync"
+	// "sync"
 	"math/rand"
 	"sort"
 	"strings"
 )
 
 // initialize mutex lock
-var mutex = &sync.Mutex{}
+// var mutex = &sync.Mutex{}
 const READ_PORTION = 0.3
 const DATA_SIZE = 64
 
@@ -59,16 +59,16 @@ func workload(num int){
 
 	// insert value into table before start testing
 	for i := 0; i < num; i++{
-		initWrite(i)
+		initWrite(i%10)
 	}
 
 	for i := 0; i < num; i++ {
 		temp := rand.Float64()
 		if temp < READ_PORTION {
-			read_load(i, rTime)
+			read_load(i%10, rTime)
 			num_read += 1
 		} else {
-			write_load(i, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE), wTime)
+			write_load(i%10, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE), wTime)
 			num_write += 1
 		}
 	}
@@ -102,6 +102,6 @@ func workload(num int){
 
 	fmt.Printf("Avg write time: %f ms\n", float64(WTotal)/float64(num_write))
 	fmt.Printf("Avg read time: %f ms\n", float64(RTotal)/float64(num_read))
-	fmt.Printf("95-th percentile for write time: %d ms\n", write_times[len(write_times) * 0.95])
-	fmt.Printf("95-th percentile for read time: %d ms\n", read_times[len(read_times) * 0.95])
+	fmt.Printf("95-th percentile for write time: %d ms\n", write_times[int(float64(len(write_times)) * 0.95)])
+	fmt.Printf("95-th percentile for read time: %d ms\n", read_times[int(float64(len(read_times)) * 0.95)])
 }
