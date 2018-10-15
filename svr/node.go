@@ -44,13 +44,13 @@ func (n *Node) write(key int, value string) {
 	// update vector clock
 	n.vec_clock[id] += 1
 	// update key-value pair
+	mutex.Lock()
 	n.m_data[key] = value
+	mutex.Unlock()
 	// create Message object and push to outQueue
 	msg := Message{Type: SERVER, Id: id, Key: key, Val: value, Vec: n.vec_clock}
 	// heap.Push(&n.outQueue, &msg)
-	mutex.Lock()
 	n.outQueue <- msg
-	mutex.Unlock()
 }
 
 // apply action
@@ -66,12 +66,12 @@ func (n *Node) apply() {
 				// update local vector clock
 				n.vec_clock[msg.Id] = msg.Vec[msg.Id]
 				// update memory
+				mutex.Lock()
 				n.m_data[msg.Key] = msg.Val
+				mutex.Unlock()
 			} else {
 				// heap.Push(&n.inQueue, &msg)
-				mutex.Lock()
 				n.inQueue <- msg
-				mutex.Unlock()
 			}
 		}
 		// }
