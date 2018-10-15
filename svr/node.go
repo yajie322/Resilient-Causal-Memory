@@ -1,15 +1,17 @@
 package main
 
 import (
-	"container/heap"
-	"time"
+	// "container/heap"
+	// "time"
 )
 
 type Node struct {
 	m_data    map[int]string
 	vec_clock []int
-	outQueue  PriorityQueue
-	inQueue   PriorityQueue
+	// outQueue  PriorityQueue
+	// inQueue   PriorityQueue
+	outQueue  chan Message
+	inQueue   chan Message
 }
 
 // initialize the node
@@ -22,12 +24,14 @@ func (n *Node) init(group_size int) {
 	for i := 0; i < group_size; i++ {
 		n.vec_clock[i] = 0
 	}
-	// init priority queue outQueue
-	n.outQueue = make(PriorityQueue, 0)
-	heap.Init(&n.outQueue)
-	// init priority queue inQueue
-	n.inQueue = make(PriorityQueue, 0)
-	heap.Init(&n.inQueue)
+	// // init priority queue outQueue
+	// n.outQueue = make(PriorityQueue, 0)
+	// heap.Init(&n.outQueue)
+	// // init priority queue inQueue
+	// n.inQueue = make(PriorityQueue, 0)
+	// heap.Init(&n.inQueue)
+	n.outQueue = make(chan Message)
+	n.inQueue = make(chan Message)
 }
 
 // perform read(key int), return value string
@@ -43,28 +47,30 @@ func (n *Node) write(key int, value string) {
 	n.m_data[key] = value
 	// create Message object and push to outQueue
 	msg := Message{Type: SERVER, Id: id, Key: key, Val: value, Vec: n.vec_clock}
-	heap.Push(&n.outQueue, &msg)
+	// heap.Push(&n.outQueue, &msg)
+	n.outQueue <- msg
 }
 
 // apply action
 func (n *Node) apply() {
 	for status {
 		// while inqueue is not empty, compare it and update
-		for n.inQueue.Len() > 0 {
-			// pop
-			msg := heap.Pop(&n.inQueue).(*Message)
-			if n.compareTo(msg.Id, msg.Vec) {
-				// update local vector clock
-				n.vec_clock[msg.Id] = msg.Vec[msg.Id]
-				// update memory
-				n.m_data[msg.Key] = msg.Val
-			} else {
-				// push
-				heap.Push(&n.inQueue, &msg)
-			}
+		// for n.inQueue.Len() > 0 {
+		// pop
+		// msg := *heap.Pop(&n.inQueue).(*Message)
+		msg := <- n.inQueue
+		if n.compareTo(msg.Id, msg.Vec) {
+			// update local vector clock
+			n.vec_clock[msg.Id] = msg.Vec[msg.Id]
+			// update memory
+			n.m_data[msg.Key] = msg.Val
+		} else {
+			// heap.Push(&n.inQueue, &msg)
+			n.inQueue <- msg
 		}
+		// }
 		// wait for inqueue to be non-empty
-		time.Sleep(10 * time.Millisecond)
+		// time.Sleep(10 * time.Millisecond)
 	}
 }
 
@@ -72,14 +78,15 @@ func (n *Node) apply() {
 func (n *Node) send() {
 	for status {
 		// while out queue is not empty, pop out msg and broadcast it
-		for n.outQueue.Len() > 0 {
-			// pop
-			msg := heap.Pop(&n.outQueue).(*Message)
-			// broadcast
-			broadcast(msg)
-		}
+		// for n.outQueue.Len() > 0 {
+		// pop
+		// msg := heap.Pop(&n.outQueue).(*Message)
+		msg := <- n.outQueue
+		// broadcast
+		broadcast(&msg)
+		// }
 		// wait for outqueue to be non-empty
-		time.Sleep(10 * time.Millisecond)
+		// time.Sleep(10 * time.Millisecond)
 	}
 }
 

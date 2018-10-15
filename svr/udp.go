@@ -3,7 +3,7 @@ package main
 import (
 	"net"
 	"fmt"
-	"container/heap"
+	// "container/heap"
 )
 
 // use udp to broadcast msg
@@ -81,7 +81,8 @@ func (n *Node) recv(done chan bool){
 		case msg := <-c:
 			if msg.Type == SERVER {
 				// push the message to inQueue
-				heap.Push(&n.inQueue, &msg)
+				// heap.Push(&n.inQueue, &msg)
+				n.inQueue <- msg
 			} else if msg.Type == CLIENT_WRITE {
 				n.write(msg.Key, msg.Val)
 				rep := Message{Type: CLIENT_WRITE, Id: id, Key: 0, Val: "", Vec: make([]int,1)}
