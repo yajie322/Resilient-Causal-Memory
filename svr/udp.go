@@ -130,7 +130,7 @@ func listener(){
 
 		select {
 		case msg := <-c:
-			fmt.Println(msg)
+			// fmt.Println(msg)
 			if msg.Type == CLIENT_WRITE {
 				write_chan <- true
 			} else {

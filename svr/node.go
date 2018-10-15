@@ -51,15 +51,16 @@ func (n *Node) apply() {
 	for status {
 		// while inqueue is not empty, compare it and update
 		for n.inQueue.Len() > 0 {
-			// peek
-			msg := n.inQueue[0]
+			// pop
+			msg = heap.Pop(&n.inQueue).(*Message)
 			if n.compareTo(msg.Id, msg.Vec) {
-				// pop
-				msg = heap.Pop(&n.inQueue).(*Message)
 				// update local vector clock
 				n.vec_clock[msg.Id] = msg.Vec[msg.Id]
 				// update memory
 				n.m_data[msg.Key] = msg.Val
+			} else {
+				// push
+				heap.Push(&n.inQueue, &msg)
 			}
 		}
 		// wait for inqueue to be non-empty
