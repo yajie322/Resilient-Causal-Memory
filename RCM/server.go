@@ -4,6 +4,7 @@ import (
 	"time"
 	"net"
 	"fmt"
+	"sync"
 )
 
 type WitnessEntry struct {
@@ -12,10 +13,12 @@ type WitnessEntry struct {
 }
 
 type Server struct {
-	m_data		map[int]string
-	vec_clock	[]int
-	queue		Queue
-	witness 	map[WitnessEntry]int
+	m_data			map[int]string
+	m_data_lock		sync.RWMutex
+	vec_clock		[]int
+	queue			Queue
+	witness 		map[WitnessEntry]int
+	witness_lock	sync.RWMutex
 }
 
 func (svr *Server) init(group_size int) {
@@ -40,7 +43,9 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int){
 		time.Sleep(time.Millisecond)
 	}
 	// send RESP message to client i
+	svr.m_data_lock.RLock()
 	msg := Message{Kind: RESP, Counter: counter, Val: svr.m_data[key], Vec: svr.vec_clock}
+	svr.m_data_lock.RUnlock()
 	send(&msg, mem_list[id])
 }
 
@@ -61,19 +66,30 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 // Actions to take if server receives UPDATE message
 func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int) {
 	entry := WitnessEntry{id: id, counter: counter}
-	if _, isIn := svr.witness[entry]; isIn {
-		svr.witness[entry] += 1
+	svr.witness_lock.RLock()
+	num, isIn := svr.witness[entry]
+	svr.witness_lock.RUnlock()
+	if isIn {
+		svr.witness_lock.Lock()
+		svr.witness[entry] = num + 1
+		svr.witness_lock.Unlock()
 	} else {
+		svr.witness_lock.Lock()
 		svr.witness[entry] = 1
+		svr.witness_lock.Unlock()
 	}
+	svr.witness_lock.RLock()
 	if svr.witness[entry] == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 		broadcast(&msg)
 	}
+	svr.witness_lock.RUnlock()
+	svr.witness_lock.RLock()
 	if svr.witness[entry] == F+1 {
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
 		svr.queue.Enqueue(queue_entry)
 	}
+	svr.witness_lock.RUnlock()
 }
 
 // Server listener
@@ -130,7 +146,9 @@ func (svr *Server) update(){
 		}
 		// update timestamp and write to local memory
 		svr.vec_clock[msg.Id] = msg.Vec[msg.Id]
+		svr.m_data_lock.Lock()
 		svr.m_data[msg.Key] = msg.Val
+		svr.m_data_lock.Unlock()
 		fmt.Println("server ", id, " has m_data: ", svr.m_data)
 	}
 }
