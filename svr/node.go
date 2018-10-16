@@ -30,13 +30,16 @@ func (n *Node) init(group_size int) {
 	// // init priority queue inQueue
 	// n.inQueue = make(PriorityQueue, 0)
 	// heap.Init(&n.inQueue)
-	n.outQueue = make(chan Message, 1024)
-	n.inQueue = make(chan Message, 1024)
+	n.outQueue = make(chan Message, 10000)
+	n.inQueue = make(chan Message, 10000)
 }
 
 // perform read(key int), return value string
 func (n *Node) read(key int) string {
-	return n.m_data[key]
+	mutex.Lock()
+	res := n.m_data[key]
+	mutex.Unlock()
+	return res
 }
 
 // perform write(id int, key int, value string)
