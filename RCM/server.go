@@ -16,6 +16,7 @@ type Server struct {
 	m_data			map[int]string
 	m_data_lock		sync.RWMutex
 	vec_clock		[]int
+	vec_clock_lock	sync.RWMutex
 	queue			Queue
 	witness 		map[WitnessEntry]int
 	witness_lock	sync.RWMutex
@@ -24,8 +25,10 @@ type Server struct {
 func (svr *Server) init(group_size int) {
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int] string)
+	svr.m_data_lock = sync.RWMutex{}
 	// init vector timestamp with length group_size
 	svr.vec_clock = make([]int, group_size)
+	svr.vec_clock_lock = sync.RWMutex{}
 	// set vector timestamp to zero
 	for i:= 0; i < group_size; i++ {
 		svr.vec_clock[i] = 0
@@ -34,6 +37,7 @@ func (svr *Server) init(group_size int) {
 	svr.queue.Init()
 	// init witness
 	svr.witness = make(map[WitnessEntry] int)
+	svr.witness_lock = sync.RWMutex{}
 }
 
 // Actions to take if server receives READ message
@@ -69,27 +73,26 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 	svr.witness_lock.RLock()
 	num, isIn := svr.witness[entry]
 	svr.witness_lock.RUnlock()
+	svr.witness_lock.Lock()
 	if isIn {
-		svr.witness_lock.Lock()
 		svr.witness[entry] = num + 1
-		svr.witness_lock.Unlock()
 	} else {
-		svr.witness_lock.Lock()
 		svr.witness[entry] = 1
-		svr.witness_lock.Unlock()
 	}
+	svr.witness_lock.Unlock()
 	svr.witness_lock.RLock()
 	if svr.witness[entry] == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 		broadcast(&msg)
 	}
 	svr.witness_lock.RUnlock()
-	svr.witness_lock.RLock()
+	svr.witness_lock.Lock()
 	if svr.witness[entry] == F+1 {
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
 		svr.queue.Enqueue(queue_entry)
+		svr.witness[entry] = F+2
 	}
-	svr.witness_lock.RUnlock()
+	svr.witness_lock.Unlock()
 }
 
 // Server listener
@@ -136,16 +139,21 @@ func (svr *Server) recv(){
 
 // infinitely often update the local storage
 func (svr *Server) update(){
-	for svr.queue.Len() > 0 {
-		msg := svr.queue.Dequeue()
+	msg := svr.queue.Dequeue()
+	if msg != nil {
 		// wait until it's time to update
 		fmt.Println(msg.Vec)
 		fmt.Println(svr.vec_clock)
-		for svr.vec_clock[msg.Id] < msg.Vec[msg.Id]-1 || !smallerEqualExceptI(msg.Vec, svr.vec_clock, msg.Id) {
-			time.Sleep(time.Millisecond)
+		for svr.vec_clock[msg.Id] != msg.Vec[msg.Id]-1 || !smallerEqualExceptI(msg.Vec, svr.vec_clock, msg.Id) {
+			// time.Sleep(time.Millisecond)
+			if svr.vec_clock[msg.Id] > msg.Vec[msg.Id]-1 {
+				return
+			}
 		}
 		// update timestamp and write to local memory
+		svr.vec_clock_lock.Lock()
 		svr.vec_clock[msg.Id] = msg.Vec[msg.Id]
+		svr.vec_clock_lock.Unlock()
 		svr.m_data_lock.Lock()
 		svr.m_data[msg.Key] = msg.Val
 		svr.m_data_lock.Unlock()

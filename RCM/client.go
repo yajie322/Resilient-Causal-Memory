@@ -86,16 +86,17 @@ func (clt *Client) recvRESP(counter int, val string, vec []int) {
 // Actions to take if receive ACK message
 func (clt *Client) recvACK(counter int, vec []int) {
 	clt.writer_ts_lock.RLock()
-	if _, isIn := clt.writer_ts[counter]; !isIn {
-		clt.writer_ts_lock.RUnlock()
+	_, isIn := clt.writer_ts[counter]
+	clt.writer_ts_lock.RUnlock()
+	if !isIn {
 		clt.writer_ts_lock.Lock()
 		clt.writer_ts[counter] = make(map[int] []int)
 		clt.writer_ts_lock.Unlock()
 	}
 	fmt.Println("ACK message received vec", vec)
-	clt.writer_ts_lock.Lock()
+	clt.writer_ts_lock.RLock()
 	clt.writer_ts[counter][len(clt.writer_ts[counter])] = vec
-	clt.writer_ts_lock.Unlock()
+	clt.writer_ts_lock.RUnlock()
 }
 
 // Client listener

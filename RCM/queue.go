@@ -32,13 +32,14 @@ func (q *Queue) Enqueue(entry QueueEntry) {
 
 func (q *Queue) Dequeue() *QueueEntry {
   for {
+    q.lock.Lock()
     if (len(q.values) > 0) {
-      q.lock.Lock()
       entry := q.values[0]
       q.values = q.values[1:]
       q.lock.Unlock()
       return &entry
     }
+    q.lock.Unlock()
     return nil
   }
   return nil
