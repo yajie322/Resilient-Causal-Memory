@@ -50,15 +50,15 @@ func read_load(num int) time.Duration {
 }
 
 func workload(num int){
-	var write_times []int
-	var read_times []int
+	var write_times []int64
+	var read_times []int64
 
 	num_read := 0
 	num_write := 0
 
 	// wTime := make(chan time.Duration)
 	// rTime := make(chan time.Duration)
-	var WTotal, RTotal int = 0, 0
+	var WTotal, RTotal int64 = 0, 0
 
 	// insert value into table before start testing
 	initWrite(10)
@@ -66,12 +66,12 @@ func workload(num int){
 	for i := 0; i < num; i++ {
 		temp := rand.Float64()
 		if temp < READ_PORTION {
-			millisec := int(read_load(i%10)/time.Millisecond)
+			millisec := read_load(i%10).Nanoseconds()
 			RTotal += millisec
 			read_times = append(read_times, millisec)
 			num_read += 1
 		} else {
-			millisec := int(write_load(i%10, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE))/time.Millisecond)
+			millisec := write_load(i%10, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE)).Nanoseconds()
 			WTotal += millisec
 			write_times = append(write_times, millisec)
 			num_write += 1
@@ -101,9 +101,12 @@ func workload(num int){
 	// 	RTotal += millisec
 	// 	read_times[i] = millisec
 	// }
-
-	sort.Ints(write_times)
-	sort.Ints(read_times)
+	sort.Slice(write_times, func(i, j int) bool {
+	    return write_times[i] < write_times[j]
+	})
+	sort.Slice(read_times, func(i, j int) bool {
+	    return read_times[i] < write_times[j]
+	})
 
 	fmt.Printf("Avg write time: %f ms\n", float64(WTotal)/float64(num_write))
 	fmt.Printf("Avg read time: %f ms\n", float64(RTotal)/float64(num_read))
