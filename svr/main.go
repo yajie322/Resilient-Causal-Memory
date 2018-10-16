@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"sync"
 	"os"
 	"flag"
 	"strconv"
@@ -16,7 +17,7 @@ const QUIT = 3
 
 var (
 	id int
-	// mutex = new(sync.mutex)
+	mutex = &sync.Mutex{}
 	svr_list = make(map[int]string)
 	clt_list = make(map[int]string)
 	status   bool

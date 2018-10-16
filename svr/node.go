@@ -30,13 +30,16 @@ func (n *Node) init(group_size int) {
 	// // init priority queue inQueue
 	// n.inQueue = make(PriorityQueue, 0)
 	// heap.Init(&n.inQueue)
-	n.outQueue = make(chan Message)
-	n.inQueue = make(chan Message)
+	n.outQueue = make(chan Message, 10000)
+	n.inQueue = make(chan Message, 10000)
 }
 
 // perform read(key int), return value string
 func (n *Node) read(key int) string {
-	return n.m_data[key]
+	mutex.Lock()
+	res := n.m_data[key]
+	mutex.Unlock()
+	return res
 }
 
 // perform write(id int, key int, value string)
@@ -44,7 +47,9 @@ func (n *Node) write(key int, value string) {
 	// update vector clock
 	n.vec_clock[id] += 1
 	// update key-value pair
+	mutex.Lock()
 	n.m_data[key] = value
+	mutex.Unlock()
 	// create Message object and push to outQueue
 	msg := Message{Type: SERVER, Id: id, Key: key, Val: value, Vec: n.vec_clock}
 	// heap.Push(&n.outQueue, &msg)
@@ -58,15 +63,19 @@ func (n *Node) apply() {
 		// for n.inQueue.Len() > 0 {
 		// pop
 		// msg := *heap.Pop(&n.inQueue).(*Message)
-		msg := <- n.inQueue
-		if n.compareTo(msg.Id, msg.Vec) {
-			// update local vector clock
-			n.vec_clock[msg.Id] = msg.Vec[msg.Id]
-			// update memory
-			n.m_data[msg.Key] = msg.Val
-		} else {
-			// heap.Push(&n.inQueue, &msg)
-			n.inQueue <- msg
+		select {
+		case msg := <- n.inQueue:
+			if n.compareTo(msg.Id, msg.Vec) {
+				// update local vector clock
+				n.vec_clock[msg.Id] = msg.Vec[msg.Id]
+				// update memory
+				mutex.Lock()
+				n.m_data[msg.Key] = msg.Val
+				mutex.Unlock()
+			} else {
+				// heap.Push(&n.inQueue, &msg)
+				n.inQueue <- msg
+			}
 		}
 		// }
 		// wait for inqueue to be non-empty
@@ -81,9 +90,11 @@ func (n *Node) send() {
 		// for n.outQueue.Len() > 0 {
 		// pop
 		// msg := heap.Pop(&n.outQueue).(*Message)
-		msg := <- n.outQueue
-		// broadcast
-		broadcast(&msg)
+		select {
+		case msg := <- n.outQueue:
+			// broadcast
+			broadcast(&msg)
+		}
 		// }
 		// wait for outqueue to be non-empty
 		// time.Sleep(10 * time.Millisecond)

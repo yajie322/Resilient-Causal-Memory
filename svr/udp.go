@@ -79,10 +79,13 @@ func (n *Node) recv(done chan bool){
 
 		select {
 		case msg := <-c:
+			fmt.Println(msg)
 			if msg.Type == SERVER {
 				// push the message to inQueue
 				// heap.Push(&n.inQueue, &msg)
+				mutex.Lock()
 				n.inQueue <- msg
+				mutex.Unlock()
 			} else if msg.Type == CLIENT_WRITE {
 				n.write(msg.Key, msg.Val)
 				rep := Message{Type: CLIENT_WRITE, Id: id, Key: 0, Val: "", Vec: make([]int,1)}
@@ -131,7 +134,7 @@ func listener(){
 
 		select {
 		case msg := <-c:
-			// fmt.Println(msg)
+			fmt.Println(msg)
 			if msg.Type == CLIENT_WRITE {
 				write_chan <- true
 			} else {

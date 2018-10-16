@@ -61,19 +61,17 @@ func workload(num int){
 	var WTotal, RTotal int = 0, 0
 
 	// insert value into table before start testing
-	for i := 0; i < num; i++{
-		initWrite(i%10)
-	}
+	initWrite(10)
 
 	for i := 0; i < num; i++ {
 		temp := rand.Float64()
 		if temp < READ_PORTION {
-			millisec := int(read_load(i%10)/time.Millisecond)
+			millisec := int(read_load(i%10).Nanoseconds()/1000)
 			RTotal += millisec
 			read_times = append(read_times, millisec)
 			num_read += 1
 		} else {
-			millisec := int(write_load(i%10, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE))/time.Millisecond)
+			millisec := int(write_load(i%10, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE)).Nanoseconds()/1000)
 			WTotal += millisec
 			write_times = append(write_times, millisec)
 			num_write += 1
