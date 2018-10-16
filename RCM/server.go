@@ -70,27 +70,19 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 // Actions to take if server receives UPDATE message
 func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int) {
 	entry := WitnessEntry{id: id, counter: counter}
-	svr.witness_lock.RLock()
-	num, isIn := svr.witness[entry]
-	svr.witness_lock.RUnlock()
 	svr.witness_lock.Lock()
-	if isIn {
-		svr.witness[entry] = num + 1
+	if _, isIn := svr.witness[entry]; isIn {
+		svr.witness[entry] += 1
 	} else {
 		svr.witness[entry] = 1
 	}
-	svr.witness_lock.Unlock()
-	svr.witness_lock.RLock()
 	if svr.witness[entry] == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 		broadcast(&msg)
 	}
-	svr.witness_lock.RUnlock()
-	svr.witness_lock.Lock()
 	if svr.witness[entry] == F+1 {
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
 		svr.queue.Enqueue(queue_entry)
-		svr.witness[entry] = F+2
 	}
 	svr.witness_lock.Unlock()
 }
