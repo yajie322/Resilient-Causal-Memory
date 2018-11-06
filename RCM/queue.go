@@ -22,26 +22,20 @@ func (q *Queue) Init() {
 }
 
 func (q *Queue) Enqueue(entry QueueEntry) {
-  for {
-    q.lock.Lock()
-    q.values = append(q.values, entry)
-    q.lock.Unlock()
-    return
-  }
+  q.lock.Lock()
+  q.values = append(q.values, entry)
+  q.lock.Unlock()
 }
 
 func (q *Queue) Dequeue() *QueueEntry {
-  for {
-    q.lock.Lock()
-    if (len(q.values) > 0) {
-      entry := q.values[0]
-      q.values = q.values[1:]
-      q.lock.Unlock()
-      return &entry
-    }
+  q.lock.Lock()
+  if (len(q.values) > 0) {
+    entry := q.values[0]
+    q.values = q.values[1:]
     q.lock.Unlock()
-    return nil
+    return &entry
   }
+  q.lock.Unlock()
   return nil
 }
 

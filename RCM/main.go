@@ -4,7 +4,7 @@ import (
 	"os"
 	"fmt"
 	"flag"
-    // "time"
+    "time"
     // "sync"
 	"bufio"
 	"strings"
@@ -61,7 +61,7 @@ func main(){
                 fmt.Println("quit")
             default:
                 go node.update()
-                // time.Sleep(time.Millisecond)
+                time.Sleep(time.Millisecond)
             }
         }
     case "client":
