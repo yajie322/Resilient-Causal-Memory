@@ -1,9 +1,9 @@
 package main
 
 import (
-	"time"
 	"net"
 	"fmt"
+	"sync"
 	// "strconv"
 )
 
@@ -13,11 +13,15 @@ type ReadBufEntry struct {
 }
 
 type Client struct {
-	vec_clock	[]int
-	counter		int
-	readBuf 	map[int]ReadBufEntry
-	writeBuf	map[int][]int
-	localBuf	map[int]string
+	vec_clock		[]int
+	counter			int
+	readBuf 		map[int]ReadBufEntry
+	readBuf_lock	sync.RWMutex
+	readBuf_cond	*sync.Cond
+	writeBuf		map[int][]int
+	writeBuf_lock	sync.RWMutex
+	writeBuf_cond	*sync.Cond
+	localBuf		map[int]string
 }
 
 func (clt *Client) init(group_size int) {
@@ -29,18 +33,26 @@ func (clt *Client) init(group_size int) {
 	clt.counter = 0
 	// init read buffer as counter(int) - (value, timestamp) tuple (ReadBufEntry) pairs
 	clt.readBuf = make(map[int] ReadBufEntry)
+	clt.readBuf_lock = sync.RWMutex{}
+	clt.readBuf_cond = sync.NewCond(&clt.readBuf_lock)
 	clt.writeBuf = make(map[int] []int)
+	clt.writeBuf_lock = sync.RWMutex{}
+	clt.writeBuf_cond = sync.NewCond(&clt.writeBuf_lock)
 	clt.localBuf = make(map[int] string)
 }
 
 func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
+	clt.readBuf_lock.RLock()
 	entry, isIn := clt.readBuf[clt.counter]
+	clt.readBuf_lock.RUnlock()
+	clt.readBuf_cond.L.Lock()
 	for !isIn {
-		time.Sleep(time.Millisecond)
+		clt.readBuf_cond.Wait()
 		entry, isIn = clt.readBuf[clt.counter]
 	}
+	clt.readBuf_cond.L.Unlock()
 	clt.counter += 1
 	if smallerEqualExceptI(entry.vec_clock, clt.vec_clock, 999999) {
 		val, isIn := clt.localBuf[key]
@@ -56,13 +68,18 @@ func (clt *Client) read(key int) string {
 }
 
 func (clt *Client) write(key int, value string) {
+	clt.vec_clock[id] += 1
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
+	clt.writeBuf_lock.RLock()
 	entry, isIn := clt.writeBuf[clt.counter]
+	clt.writeBuf_lock.RUnlock()
+	clt.writeBuf_cond.L.Lock()
 	for !isIn {
-		time.Sleep(time.Millisecond)
+		clt.writeBuf_cond.Wait()
 		entry, isIn = clt.writeBuf[clt.counter]
 	}
+	clt.writeBuf_cond.L.Unlock()
 	clt.merge_clock(entry)
 	clt.localBuf[key] = value
 	clt.counter += 1
@@ -71,13 +88,19 @@ func (clt *Client) write(key int, value string) {
 
 func (clt *Client) recvRESP(counter int, val string, vec []int) {
 	entry := ReadBufEntry{val: val, vec_clock: vec}
+	clt.readBuf_lock.Lock()
 	clt.readBuf[counter] = entry
+	clt.readBuf_cond.Broadcast()
+	clt.readBuf_lock.Unlock()
 }
 func (clt *Client) recvACK(counter int, vec []int) {
 	// if _, isIn := clt.writeBuf[counter]; isIn {
 	// 	panic("write operation " + strconv.Itoa(counter) + " is already in the write buffer")
 	// }
+	clt.writeBuf_lock.Lock()
 	clt.writeBuf[counter] = vec
+	clt.writeBuf_cond.Broadcast()
+	clt.writeBuf_lock.Unlock()
 }
 
 func (clt *Client) recv(){
