@@ -54,15 +54,9 @@ func main(){
         var node Server
         node.init(len(mem_list))
         go node.recv()
-        done := make(chan bool)
         for status {
-            select {
-            case <- done:
-                fmt.Println("quit")
-            default:
-                go node.update()
-                // time.Sleep(time.Millisecond)
-            }
+            <- node.update_needed
+            go node.update()
         }
     case "client":
         var node Client

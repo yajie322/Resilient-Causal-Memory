@@ -44,10 +44,8 @@ func (clt *Client) init(group_size int) {
 func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
-	clt.readBuf_lock.RLock()
-	entry, isIn := clt.readBuf[clt.counter]
-	clt.readBuf_lock.RUnlock()
 	clt.readBuf_cond.L.Lock()
+	entry, isIn := clt.readBuf[clt.counter]
 	for !isIn {
 		clt.readBuf_cond.Wait()
 		entry, isIn = clt.readBuf[clt.counter]
@@ -71,10 +69,8 @@ func (clt *Client) write(key int, value string) {
 	clt.vec_clock[id] += 1
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
-	clt.writeBuf_lock.RLock()
-	entry, isIn := clt.writeBuf[clt.counter]
-	clt.writeBuf_lock.RUnlock()
 	clt.writeBuf_cond.L.Lock()
+	entry, isIn := clt.writeBuf[clt.counter]
 	for !isIn {
 		clt.writeBuf_cond.Wait()
 		entry, isIn = clt.writeBuf[clt.counter]
