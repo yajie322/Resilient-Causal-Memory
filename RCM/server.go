@@ -12,6 +12,7 @@ type WitnessEntry struct {
 }
 
 type Server struct {
+	update_needed 	chan bool
 	m_data			map[int]string
 	m_data_lock		sync.RWMutex
 	vec_clock		[]int
@@ -23,6 +24,7 @@ type Server struct {
 }
 
 func (svr *Server) init(group_size int) {
+	svr.update_needed = make(chan bool, 100)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int] string)
 	svr.m_data_lock = sync.RWMutex{}
@@ -76,23 +78,24 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int) {
 	entry := WitnessEntry{id: id, counter: counter}
 	svr.witness_lock.Lock()
-	// fmt.Println("svr witness lock is locked")
 	if _, isIn := svr.witness[entry]; isIn {
 		svr.witness[entry] += 1
 	} else {
 		svr.witness[entry] = 1
 	}
-	if svr.witness[entry] == 1 {
+	witness_num := svr.witness[entry]
+	svr.witness_lock.Unlock()
+
+	if witness_num == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 		broadcast(&msg)
 	}
-	if svr.witness[entry] == F+1 {
+	if witness_num == F+1 {
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
 		svr.queue.Enqueue(queue_entry)
+		svr.update_needed <- true
 		// fmt.Println("server enqueues entry: ", queue_entry)
 	}
-	svr.witness_lock.Unlock()
-	// fmt.Println("svr witness lock is unlocked")
 }
 
 // Server listener
@@ -149,18 +152,16 @@ func (svr *Server) update(){
 		// fmt.Println("server has vec_clock: ", svr.vec_clock)
 		svr.vec_clock_cond.L.Lock()
 		for svr.vec_clock[msg.Id] != msg.Vec[msg.Id]-1 || !smallerEqualExceptI(msg.Vec, svr.vec_clock, msg.Id) {
-			svr.vec_clock_cond.Wait()
 			if svr.vec_clock[msg.Id] > msg.Vec[msg.Id]-1 {
 				return
 			}
+			svr.vec_clock_cond.Wait()
 		}
-		svr.vec_clock_cond.L.Unlock()
 		// update timestamp and write to local memory
-		svr.vec_clock_lock.Lock()
 		svr.vec_clock[msg.Id] = msg.Vec[msg.Id]
 		// fmt.Println("server increments vec_clock: ", svr.vec_clock)
 		svr.vec_clock_cond.Broadcast()
-		svr.vec_clock_lock.Unlock()
+		svr.vec_clock_cond.L.Unlock()
 		svr.m_data_lock.Lock()
 		svr.m_data[msg.Key] = msg.Val
 		svr.m_data_lock.Unlock()

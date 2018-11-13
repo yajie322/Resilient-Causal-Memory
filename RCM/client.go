@@ -43,10 +43,8 @@ func (clt *Client) init(group_size int) {
 func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
-	clt.readBuf_lock.RLock()
-	entry, isIn := clt.readBuf[clt.counter]
-	clt.readBuf_lock.RUnlock()
 	clt.readBuf_cond.L.Lock()
+	entry, isIn := clt.readBuf[clt.counter]
 	for !isIn {
 		clt.readBuf_cond.Wait()
 		entry, isIn = clt.readBuf[clt.counter]
@@ -61,24 +59,17 @@ func (clt *Client) write(key int, value string) {
 	clt.vec_clock[id] += 1
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
-	clt.writer_ts_lock.RLock()
-	writer_ts_len := len(clt.writer_ts[clt.counter])
-	clt.writer_ts_lock.RUnlock()
 	clt.writer_ts_cond.L.Lock()
-	for writer_ts_len <= F {
+	for len(clt.writer_ts[clt.counter]) <= F {
 		clt.writer_ts_cond.Wait()
-		writer_ts_len = len(clt.writer_ts[clt.counter])
 	}
-	clt.writer_ts_cond.L.Unlock()
-	clt.writer_ts_lock.RLock()
 	// fmt.Println(clt.writer_ts[clt.counter])
 	vec_set := clt.writer_ts[clt.counter]
-	clt.writer_ts_lock.RUnlock()
 	// merge all elements of writer_ts[counter] with local vector clock
-
 	for _,vec := range vec_set {
 		clt.merge_clock(vec)
 	}
+	clt.writer_ts_cond.L.Unlock()
 	clt.counter += 1
 }
 
