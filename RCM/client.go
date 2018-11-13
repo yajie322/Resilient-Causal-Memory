@@ -14,6 +14,7 @@ type ReadBufEntry struct {
 type Client struct {
 	vec_clock		[]int
 	counter			int
+	counter_lock 	sync.Mutex
 	writer_ts		map[int]map[int][]int
 	writer_ts_lock	sync.RWMutex
 	writer_ts_cond	*sync.Cond
@@ -30,6 +31,7 @@ func (clt *Client) init(group_size int) {
 		clt.vec_clock[i] = 0
 	}
 	clt.counter = 0
+	clt.counter_lock = sync.Mutex{}
 	// init writer_ts as counter(int) - timestamp([]int) pairs
 	clt.writer_ts = make(map[int] map[int][]int)
 	clt.writer_ts_lock = sync.RWMutex{}
@@ -41,36 +43,42 @@ func (clt *Client) init(group_size int) {
 }
 
 func (clt *Client) read(key int) string {
-	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
+	clt.counter_lock.Lock()
+	clt.counter += 1
+	temp_counter := clt.counter
+	clt.counter_lock.Unlock()
+	msg := Message{Kind: READ, Key: key, Id: id, Counter: temp_counter, Vec: clt.vec_clock}
 	broadcast(&msg)
 	clt.readBuf_cond.L.Lock()
-	entry, isIn := clt.readBuf[clt.counter]
+	entry, isIn := clt.readBuf[temp_counter]
 	for !isIn {
 		clt.readBuf_cond.Wait()
-		entry, isIn = clt.readBuf[clt.counter]
+		entry, isIn = clt.readBuf[temp_counter]
 	}
 	clt.readBuf_cond.L.Unlock()
 	clt.merge_clock(entry.vec_clock)
-	clt.counter += 1
 	return entry.val
 }
 
 func (clt *Client) write(key int, value string) {
 	clt.vec_clock[id] += 1
-	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
+	clt.counter_lock.Lock()
+	clt.counter += 1
+	temp_counter := clt.counter
+	clt.counter_lock.Unlock()
+	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: temp_counter, Vec: clt.vec_clock}
 	broadcast(&msg)
 	clt.writer_ts_cond.L.Lock()
-	for len(clt.writer_ts[clt.counter]) <= F {
+	for len(clt.writer_ts[temp_counter]) <= F {
 		clt.writer_ts_cond.Wait()
 	}
 	// fmt.Println(clt.writer_ts[clt.counter])
-	vec_set := clt.writer_ts[clt.counter]
+	vec_set := clt.writer_ts[temp_counter]
 	// merge all elements of writer_ts[counter] with local vector clock
 	for _,vec := range vec_set {
 		clt.merge_clock(vec)
 	}
 	clt.writer_ts_cond.L.Unlock()
-	clt.counter += 1
 }
 
 // Actions to take if receive RESP message
