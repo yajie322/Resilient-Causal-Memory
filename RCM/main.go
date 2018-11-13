@@ -63,7 +63,7 @@ func main(){
         node.init(len(mem_list))
         go node.recv()
         // node.userInput()
-        node.workload(10000)
+        node.workload(100000)
     }
 }
 
