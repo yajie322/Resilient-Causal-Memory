@@ -19,7 +19,7 @@ type Client struct {
 	writer_ts_lock	sync.RWMutex
 	writer_ts_cond	*sync.Cond
 	readBuf 		map[int]ReadBufEntry
-	readBuf_lock 	sync.RWMutex
+	readBuf_lock 	sync.Mutex
 	readBuf_cond	*sync.Cond
 }
 
@@ -38,7 +38,7 @@ func (clt *Client) init(group_size int) {
 	clt.writer_ts_cond = sync.NewCond(&clt.writer_ts_lock)
 	// init read buffer as counter(int) - (value, timestamp) tuple (ReadBufEntry) pairs
 	clt.readBuf = make(map[int] ReadBufEntry)
-	clt.readBuf_lock = sync.RWMutex{}
+	clt.readBuf_lock = sync.Mutex{}
 	clt.readBuf_cond = sync.NewCond(&clt.readBuf_lock)
 }
 
@@ -52,6 +52,7 @@ func (clt *Client) read(key int) string {
 	clt.readBuf_cond.L.Lock()
 	entry, isIn := clt.readBuf[temp_counter]
 	for !isIn {
+		fmt.Println('read waiting...')
 		clt.readBuf_cond.Wait()
 		entry, isIn = clt.readBuf[temp_counter]
 	}
@@ -70,6 +71,7 @@ func (clt *Client) write(key int, value string) {
 	broadcast(&msg)
 	clt.writer_ts_cond.L.Lock()
 	for len(clt.writer_ts[temp_counter]) <= F {
+		fmt.Println('write waiting...')
 		clt.writer_ts_cond.Wait()
 	}
 	// fmt.Println(clt.writer_ts[clt.counter])

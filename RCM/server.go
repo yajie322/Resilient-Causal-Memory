@@ -20,7 +20,7 @@ type Server struct {
 	vec_clock_cond	*sync.Cond
 	queue			Queue
 	witness 		map[WitnessEntry]int
-	witness_lock	sync.RWMutex
+	witness_lock	sync.Mutex
 }
 
 func (svr *Server) init(group_size int) {
@@ -40,7 +40,7 @@ func (svr *Server) init(group_size int) {
 	svr.queue.Init()
 	// init witness
 	svr.witness = make(map[WitnessEntry] int)
-	svr.witness_lock = sync.RWMutex{}
+	svr.witness_lock = sync.Mutex{}
 }
 
 // Actions to take if server receives READ message
