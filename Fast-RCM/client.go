@@ -95,6 +95,7 @@ func (clt *Client) recvACK(counter int, vec []int) {
 	// }
 	clt.writeBuf_lock.Lock()
 	clt.writeBuf[counter] = vec
+	fmt.Println("ACK message received vec", vec)
 	clt.writeBuf_cond.Broadcast()
 	clt.writeBuf_lock.Unlock()
 }

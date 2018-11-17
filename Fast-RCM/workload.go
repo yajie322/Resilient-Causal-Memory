@@ -77,8 +77,8 @@ func (clt *Client) workload(num int){
 	sort.Ints(write_times)
 	sort.Ints(read_times)
 
-	fmt.Printf("Avg write time: %f ms\n", float64(WTotal)/float64(num_write))
-	fmt.Printf("Avg read time: %f ms\n", float64(RTotal)/float64(num_read))
-	fmt.Printf("95-th percentile for write time: %d ms\n", write_times[int(float64(num_write) * 0.95)])
-	fmt.Printf("95-th percentile for read time: %d ms\n", read_times[int(float64(num_read) * 0.95)])
+	fmt.Printf("Avg write time: %f us\n", float64(WTotal)/float64(num_write))
+	fmt.Printf("Avg read time: %f us\n", float64(RTotal)/float64(num_read))
+	fmt.Printf("95-th percentile for write time: %d us\n", write_times[int(float64(num_write) * 0.95)])
+	fmt.Printf("95-th percentile for read time: %d us\n", read_times[int(float64(num_read) * 0.95)])
 }
