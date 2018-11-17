@@ -44,7 +44,9 @@ func (svr *Server) init(group_size int) {
 }
 
 func (svr *Server) recvRead(key int, id int, counter int, vec_i []int){
+	m_data_lock.RLock()
 	msg := Message{Kind: RESP, Counter: counter, Val: svr.m_data[key], Vec: svr.vec_clock}
+	m_data_lock.RUnlock()
 	send(&msg, mem_list[id])
 }
 
