@@ -49,7 +49,7 @@ func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	broadcast(&msg)
 	val := <-clt.val_chan
-	clt.counter += 1
+	fmt.Println("finish reading")
 	return val
 }
 
@@ -72,22 +72,18 @@ func (clt *Client) write(key int, value string) {
 
 func (clt *Client) recvRESP(counter int, key int, val string, vec []int) {
 	clt.counter_lock.Lock()
+
 	if (clt.counter == counter) {
 		if smallerEqualExceptI(vec, clt.vec_clock, 999999) {
-			fmt.Println("dadata")
 			val, isIn := clt.localBuf[key]
 			if !isIn {
 				panic("value is not in local buffer")
 			}
-			select {
-			case clt.val_chan <- val:
-			default:
-			}
-
-			fmt.Println("lolo")
+			clt.counter += 1
+			clt.val_chan <- val
+			fmt.Println("sent")
 		} else {
 			entry := ReadBufKey{counter: counter, val: val}
-			fmt.Println("ahahaha")
 			clt.readBuf_lock.Lock() 
 			if _, isIn := clt.readBuf[entry]; isIn {
 				clt.readBuf[entry] += 1
@@ -100,13 +96,12 @@ func (clt *Client) recvRESP(counter int, key int, val string, vec []int) {
 			clt.merge_clock(vec)
 
 			if buf_num == F+1 {
-				select {
-				case clt.val_chan <- val:
-				default:
-				}
+				clt.counter += 1
+				clt.val_chan <- val
 			}
 		}
 	}
+
 	clt.counter_lock.Unlock()
 }
 func (clt *Client) recvACK(counter int, vec []int) {
