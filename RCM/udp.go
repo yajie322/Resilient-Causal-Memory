@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func send(msg *Message, addr string) {
+func udpSend(msg *Message, addr string) {
 	b := getGobFromMsg(msg)
 	// resolve address
 	udpAddr,err1 := net.ResolveUDPAddr("udp4", addr)
@@ -26,7 +26,7 @@ func send(msg *Message, addr string) {
 }
 
 // use udp to broadcast msg
-func broadcast(msg *Message){
+func udpBroadcast(msg *Message){
 	//use gob to serialized data before sending
 	b := getGobFromMsg(msg)
 	for Id,addr := range mem_list {

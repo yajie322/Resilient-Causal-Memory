@@ -62,7 +62,7 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) {
 func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) {
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-	broadcast(&msg)
+	zmqBroadcast(&msg, )
 	// wait until t_server is greater than t_i
 	svr.vec_clock_cond.L.Lock()
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
