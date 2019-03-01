@@ -122,48 +122,6 @@ func (clt *Client) recvACK(dealer *zmq.Socket) {
 	return
 }
 
-// Client listener
-//func (clt *Client) recv() {
-//	// resolve for udp address by membership list and id
-//	udpAddr, err1 := net.ResolveUDPAddr("udp4", mem_list[id])
-//	if err1 != nil {
-//		fmt.Println("address not found")
-//	}
-//
-//	// create listner socket by address
-//	conn, err2 := net.ListenUDP("udp", udpAddr)
-//	if err2 != nil {
-//		fmt.Println("address can't listen")
-//	}
-//	defer conn.Close()
-//
-//	for status {
-//		c := make(chan Message)
-//
-//		go func() {
-//			//buffer size is 1024 bytes
-//			buf := make([]byte, 1024)
-//			num, _, err3 := conn.ReadFromUDP(buf)
-//			if err3 != nil {
-//				fmt.Println(err3)
-//			}
-//			//deserialize the received data and output to channel
-//			c <- getMsgFromGob(buf[:num])
-//		}()
-//
-//		msg := <-c
-//
-//		switch msg.Kind {
-//		case RESP:
-//			// fmt.Println("client receives RESP message with vec_clock", msg.Vec)
-//			clt.recvRESP(msg.Counter, msg.Val, msg.Vec)
-//		case ACK:
-//			// fmt.Println("client receives ACK message with vec_clock", msg.Vec)
-//			clt.recvACK(msg.Counter, msg.Vec)
-//		}
-//	}
-//}
-
 // helper function that merges a vector clock with client's own vector clock
 func (clt *Client) merge_clock(vec []int) {
 	if len(clt.vec_clock) != len(vec) {
