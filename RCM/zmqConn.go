@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	zmq "github.com/pebbe/zmq4"
-	"net"
 )
 
 func createDealerSocket() *zmq.Socket {
@@ -16,24 +14,15 @@ func createDealerSocket() *zmq.Socket {
 	return dealer
 }
 
-func send(msg *Message, addr string) {
-	b := getGobFromMsg(msg)
-	// resolve address
-	udpAddr,err1 := net.ResolveUDPAddr("udp4", addr)
-	if err1 != nil {
-		fmt.Println("Err getting addr")
-		return //gracefully deal with connection error
+func createPublisherSocket() *zmq.Socket {
+	publisher,_ := zmq.NewSocket(zmq.PUB)
+	publisher.Bind("tcp://*:"+"9999")
+	var addr string
+	for _,server := range mem_list {
+		addr = "tcp://" + server
+		publisher.Connect(addr)
 	}
-	// create send socket
-	conn,err2 := net.DialUDP("udp", nil, udpAddr)
-	if err2 != nil {
-		fmt.Println("Err dialing.")
-		return
-	}
-	// send the data
-	conn.Write(b)
-	conn.Close()
-
+	return publisher
 }
 
 // broadcast to all

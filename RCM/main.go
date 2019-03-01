@@ -53,7 +53,8 @@ func main() {
 	case "server":
 		var node Server
 		node.init(len(mem_list))
-		go node.recv()
+		go node.serverTask()
+		//go node.recv()
 		for status {
 			<-node.update_needed
 			go node.update()
@@ -61,7 +62,7 @@ func main() {
 	case "client":
 		var node Client
 		node.init(len(mem_list))
-		go node.recv()
+		//go node.recv()
 		// node.userInput()
 		node.workload(10000)
 	}

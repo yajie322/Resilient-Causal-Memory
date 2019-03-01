@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	zmq "github.com/pebbe/zmq4"
 	"net"
 	"sync"
 )
@@ -21,6 +22,7 @@ type Server struct {
 	queue          Queue
 	witness        map[WitnessEntry]int
 	witness_lock   sync.Mutex
+	publisher		*zmq.Socket
 }
 
 func (svr *Server) init(group_size int) {
@@ -41,10 +43,11 @@ func (svr *Server) init(group_size int) {
 	// init witness
 	svr.witness = make(map[WitnessEntry]int)
 	svr.witness_lock = sync.Mutex{}
+	svr.publisher = createPublisherSocket()
 }
 
 // Actions to take if server receives READ message
-func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) {
+func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) *Message {
 	// wait until t_server is greater than t_i
 	svr.vec_clock_cond.L.Lock()
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
@@ -55,14 +58,15 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) {
 	svr.m_data_lock.RLock()
 	msg := Message{Kind: RESP, Counter: counter, Val: svr.m_data[key], Vec: svr.vec_clock}
 	svr.m_data_lock.RUnlock()
-	send(&msg, mem_list[id])
+	return &msg
+	//send(&msg, mem_list[id])
 }
 
 // Actions to take if server receives WRITE message
-func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) {
+func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) *Message{
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-	zmqBroadcast(&msg, )
+	zmqBroadcast(&msg,svr.publisher)
 	// wait until t_server is greater than t_i
 	svr.vec_clock_cond.L.Lock()
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
@@ -71,7 +75,8 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 	svr.vec_clock_cond.L.Unlock()
 	// send ACK message to client i
 	msg = Message{Kind: ACK, Counter: counter, Vec: svr.vec_clock}
-	send(&msg, mem_list[id])
+	return &msg
+	//send(&msg, mem_list[id])
 }
 
 // Actions to take if server receives UPDATE message
@@ -88,7 +93,7 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 
 	if witness_num == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-		broadcast(&msg)
+		zmqBroadcast(&msg,svr.publisher)
 	}
 	if witness_num == F+1 {
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
