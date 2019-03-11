@@ -48,7 +48,7 @@ func (svr *Server) serverWorker() {
 		if tmpMsg != nil {
 			// encode message
 			tmpGob := getGobFromMsg(tmpMsg)
-			msgReply[1] = tmpGob.Bytes()
+			msgReply[1] = tmpGob
 
 			worker.SendMessage(msgReply)
 		}

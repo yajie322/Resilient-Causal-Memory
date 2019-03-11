@@ -30,6 +30,6 @@ func zmqBroadcast(msg *Message, dealer *zmq.Socket){
 	//use gob to serialized data before sending
 	b := getGobFromMsg(msg)
 	for i := 0; i < len(mem_list); i++ {
-		dealer.SendBytes(b.Bytes(),0)
+		dealer.SendBytes(b,0)
 	}
 }
