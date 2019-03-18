@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 	zmq "github.com/pebbe/zmq4"
+	"log"
 )
 
 func (svr *Server) serverTask(port string) {
@@ -49,14 +49,12 @@ func (svr *Server) serverWorker() {
 		// create response message
 		tmpMsg := svr.createRep(message)
 		fmt.Println(tmpMsg)
-		if tmpMsg != nil {
-			// encode message
-			tmpGob := getGobFromMsg(tmpMsg)
-			msgReply[1] = tmpGob
+		// encode message
+		tmpGob := getGobFromMsg(tmpMsg)
+		msgReply[1] = tmpGob
 
-			worker.SendMessage(msgReply)
-			fmt.Println("replied..")
-		}
+		worker.SendMessage(msgReply)
+		fmt.Println("replied..")
 	}
 }
 
@@ -70,12 +68,24 @@ func (svr *Server) createRep(input Message) *Message {
 		case WRITE:
 			// fmt.Println("server receives WRITE message with vec_clock", msg.Vec)
 			output = svr.recvWrite(input.Key, input.Val, input.Id, input.Counter, input.Vec)
-		case UPDATE:
-			// fmt.Println("server receives UPDATE message with vec_clock", msg.Vec)
-			svr.recvUpdate(input.Key, input.Val, input.Id, input.Counter, input.Vec)
-			output = nil
+		//case UPDATE:
+		//	// fmt.Println("server receives UPDATE message with vec_clock", msg.Vec)
+		//	svr.recvUpdate(input.Key, input.Val, input.Id, input.Counter, input.Vec)
+		//	output = nil
 	}
 	fmt.Println("haha")
 	fmt.Println(output)
 	return output
+}
+
+func (svr *Server) subscribe(){
+	for{
+		// get address
+		svr.subscriber.Recv(0)
+		// get contents
+		b,_ := svr.subscriber.RecvMessageBytes(0)
+		msg := getMsgFromGob(b[1])
+		fmt.Println(msg)
+		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+	}
 }

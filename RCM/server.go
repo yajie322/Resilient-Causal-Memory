@@ -23,6 +23,7 @@ type Server struct {
 	witness        map[WitnessEntry]int
 	witness_lock   sync.Mutex
 	publisher		*zmq.Socket
+	subscriber		*zmq.Socket
 }
 
 func (svr *Server) init() {
@@ -43,7 +44,9 @@ func (svr *Server) init() {
 	// init witness
 	svr.witness = make(map[WitnessEntry]int)
 	svr.witness_lock = sync.Mutex{}
-	svr.publisher = createPublisherSocket()
+	svr.publisher = createPublisherSocket(pubPort)
+	svr.subscriber = createSubscriberSocket()
+	go svr.subscribe()
 }
 
 // Actions to take if server receives READ message
@@ -66,8 +69,9 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) *Message 
 func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) *Message{
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-	zmqBroadcast(&msg,svr.publisher)
-	fmt.Printf("Server %d broadcasted msg UPDATE", id)
+	publish(&msg,svr.publisher)
+	fmt.Printf("Server %d published msg UPDATE", id)
+
 	// wait until t_server is greater than t_i
 	svr.vec_clock_cond.L.Lock()
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
@@ -94,7 +98,7 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 
 	if witness_num == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-		zmqBroadcast(&msg,svr.publisher)
+		publish(&msg,svr.publisher)
 	}
 	if witness_num == F+1 {
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}

@@ -16,6 +16,7 @@ var (
 	node_type 	string
 	// mutex = new(sync.mutex)
 	server_list = make(map[int]string)
+	server_pub = make(map[int]string)
 	status   	bool
 )
 
@@ -44,17 +45,19 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		addr := line[1]
-		mem_list[id] = addr
+		server_list[id] = line[1]
+		server_pub[id] = line[2]
 	}
 	config.Close()
 
 	switch node_type {
 	case "server":
 		var node Server
+
 		node.init()
 		port := strings.Split(mem_list[id], ":")[1]
 		go node.serverTask(port)
+
 		//go node.recv()
 		for status {
 			<-node.update_needed
