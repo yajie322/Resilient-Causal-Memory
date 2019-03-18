@@ -52,9 +52,9 @@ func main() {
 	switch node_type {
 	case "server":
 		var node Server
-		node.init(len(mem_list))
-		port := strings.Split(mem_list[id], ":")[1]
-		go node.serverTask(port)
+		ports := strings.Split(mem_list[id], ":")
+		node.init(len(mem_list), ports[2])
+		go node.serverTask(ports[1])
 		//go node.recv()
 		for status {
 			<-node.update_needed

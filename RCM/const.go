@@ -7,5 +7,6 @@ const RESP = 4
 const ACK = 5
 
 const NUMWORKER = 5
+const FILTER = "filter"
 
 const F = 1
