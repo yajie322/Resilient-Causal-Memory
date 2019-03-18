@@ -17,7 +17,9 @@ func (svr *Server) serverTask(port string) {
 	defer backend.Close()
 	backend.Bind("inproc://backend")
 
-	go svr.serverWorker()
+	for i:= 0; i < NUMWORKER; i++{
+		go svr.serverWorker()
+	}
 
 	//  Connect backend to frontend via a proxy
 	err := zmq.Proxy(frontend, backend, nil)
