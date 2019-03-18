@@ -22,11 +22,11 @@ type Client struct {
 	readBuf_cond   *sync.Cond
 }
 
-func (clt *Client) init(group_size int) {
+func (clt *Client) init() {
 	// init vector timestamp with length group_size
-	clt.vec_clock = make([]int, group_size)
+	clt.vec_clock = make([]int, NUM_CLIENT)
 	// set vector timestamp to zero
-	for i := 0; i < group_size; i++ {
+	for i := 0; i < NUM_CLIENT; i++ {
 		clt.vec_clock[i] = 0
 	}
 	clt.counter = 0
@@ -45,6 +45,7 @@ func (clt *Client) read(key int) string {
 	defer dealer.Close()
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg,dealer)
+	fmt.Printf("Client %d broadcasted msg READ\n", id)
 
 	for i:=0; i < len(mem_list); i++{
 		clt.recvACK(dealer)
@@ -68,6 +69,8 @@ func (clt *Client) write(key int, value string) {
 	clt.vec_clock[id] += 1
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg,dealer)
+	fmt.Printf("Client %d broadcasted msg WRITE\n", id)
+
 	for i:=0; i < len(mem_list); i++{
 		clt.recvACK(dealer)
 		clt.writer_ts_lock.Lock()

@@ -15,7 +15,7 @@ var (
 	id        	int
 	node_type 	string
 	// mutex = new(sync.mutex)
-	mem_list = make(map[int]string)
+	server_list = make(map[int]string)
 	status   	bool
 )
 
@@ -52,7 +52,7 @@ func main() {
 	switch node_type {
 	case "server":
 		var node Server
-		node.init(len(mem_list))
+		node.init()
 		port := strings.Split(mem_list[id], ":")[1]
 		go node.serverTask(port)
 		//go node.recv()
@@ -62,7 +62,7 @@ func main() {
 		}
 	case "client":
 		var node Client
-		node.init(len(mem_list))
+		node.init()
 		//go node.recv()
 		// node.userInput()
 		node.workload(10000)

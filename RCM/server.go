@@ -25,17 +25,17 @@ type Server struct {
 	publisher		*zmq.Socket
 }
 
-func (svr *Server) init(group_size int) {
+func (svr *Server) init() {
 	svr.update_needed = make(chan bool, 100)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int]string)
 	svr.m_data_lock = sync.RWMutex{}
 	// init vector timestamp with length group_size
-	svr.vec_clock = make([]int, group_size)
+	svr.vec_clock = make([]int, NUM_CLIENT)
 	svr.vec_clock_lock = sync.Mutex{}
 	svr.vec_clock_cond = sync.NewCond(&svr.vec_clock_lock)
 	// set vector timestamp to zero
-	for i := 0; i < group_size; i++ {
+	for i := 0; i < NUM_CLIENT; i++ {
 		svr.vec_clock[i] = 0
 	}
 	// init queue
@@ -67,6 +67,7 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 	zmqBroadcast(&msg,svr.publisher)
+	fmt.Printf("Server %d broadcasted msg UPDATE", id)
 	// wait until t_server is greater than t_i
 	svr.vec_clock_cond.L.Lock()
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {

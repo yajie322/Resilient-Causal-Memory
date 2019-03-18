@@ -9,3 +9,5 @@ const ACK = 5
 const NUMWORKER = 5
 
 const F = 1
+
+const NUM_CLIENT = 2
