@@ -105,6 +105,7 @@ func (clt *Client) recvRESP(dealer *zmq.Socket) {
 
 // Actions to take if receive ACK message
 func (clt *Client) recvACK(dealer *zmq.Socket) {
+	fmt.Println("recv ACK")
 	msgBytes,_ := dealer.RecvBytes(0)
 	msg := getMsgFromGob(msgBytes)
 	if msg.Kind != ACK {

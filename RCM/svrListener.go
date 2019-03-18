@@ -6,11 +6,11 @@ import (
 	zmq "github.com/pebbe/zmq4"
 )
 
-func (svr *Server) serverTask() {
+func (svr *Server) serverTask(port string) {
 	// Set the ZMQ sockets
 	frontend,_ := zmq.NewSocket(zmq.ROUTER)
 	defer frontend.Close()
-	frontend.Bind("tcp://*:"+"8888")
+	frontend.Bind("tcp://*:"+port)
 
 	//  Backend socket talks to workers over inproc
 	backend, _ := zmq.NewSocket(zmq.DEALER)
@@ -41,16 +41,19 @@ func (svr *Server) serverWorker() {
 		}
 		// decode message
 		message := getMsgFromGob(msg[1])
+		fmt.Println(message)
 		msgReply[0] = msg[0]
 
 		// create response message
 		tmpMsg := svr.createRep(message)
+		fmt.Println(tmpMsg)
 		if tmpMsg != nil {
 			// encode message
 			tmpGob := getGobFromMsg(tmpMsg)
 			msgReply[1] = tmpGob
 
 			worker.SendMessage(msgReply)
+			fmt.Println("replied..")
 		}
 	}
 }
@@ -70,5 +73,7 @@ func (svr *Server) createRep(input Message) *Message {
 			svr.recvUpdate(input.Key, input.Val, input.Id, input.Counter, input.Vec)
 			output = nil
 	}
+	fmt.Println("haha")
+	fmt.Println(output)
 	return output
 }

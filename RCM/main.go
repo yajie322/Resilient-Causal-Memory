@@ -12,11 +12,11 @@ import (
 )
 
 var (
-	id        int
-	node_type string
+	id        	int
+	node_type 	string
 	// mutex = new(sync.mutex)
 	mem_list = make(map[int]string)
-	status   bool
+	status   	bool
 )
 
 func main() {
@@ -53,7 +53,8 @@ func main() {
 	case "server":
 		var node Server
 		node.init(len(mem_list))
-		go node.serverTask()
+		port := strings.Split(mem_list[id], ":")[1]
+		go node.serverTask(port)
 		//go node.recv()
 		for status {
 			<-node.update_needed
