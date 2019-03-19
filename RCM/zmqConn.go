@@ -39,7 +39,7 @@ func publish(msg *Message, publisher *zmq.Socket) {
 	b := getGobFromMsg(msg)
 	fmt.Println(b)
 	for i := 0; i < len(server_list); i++ {
-		publisher.Send(FILTER, zmq.SNDMORE)
+		//publisher.Send(FILTER, zmq.SNDMORE)
 		publisher.SendBytes(b,0)
 	}
 }

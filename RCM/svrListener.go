@@ -76,11 +76,9 @@ func (svr *Server) createRep(input Message) *Message {
 
 func (svr *Server) subscribe(){
 	for{
-		// get address
-		svr.subscriber.Recv(0)
-		// get contents
+		// get bytes
 		b,_ := svr.subscriber.RecvMessageBytes(0)
-		msg := getMsgFromGob(b[0])
+		msg := getMsgFromGob(b[1])
 		fmt.Println(msg)
 		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 	}
