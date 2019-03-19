@@ -36,8 +36,9 @@ func createSubscriberSocket() *zmq.Socket {
 
 func publish(msg *Message, publisher *zmq.Socket) {
 	b := getGobFromMsg(msg)
+	fmt.Println(b)
 	for i := 0; i < len(server_list)-1; i++ {
-		publisher.Send(FILTER, zmq.SNDMORE)
+		//publisher.Send(FILTER, zmq.SNDMORE)
 		publisher.SendBytes(b,0)
 	}
 }
