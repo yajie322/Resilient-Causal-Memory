@@ -47,8 +47,8 @@ func (clt *Client) read(key int) string {
 	zmqBroadcast(&msg,dealer)
 	fmt.Printf("Client %d broadcasted msg READ\n", id)
 
-	for i:=0; i < len(mem_list); i++{
-		clt.recvACK(dealer)
+	for i:=0; i < len(server_list); i++{
+		clt.recvRESP(dealer)
 		clt.readBuf_lock.Lock()
 		_,isIn := clt.readBuf[clt.counter]
 		clt.readBuf_lock.Unlock()
@@ -71,7 +71,7 @@ func (clt *Client) write(key int, value string) {
 	zmqBroadcast(&msg,dealer)
 	fmt.Printf("Client %d broadcasted msg WRITE\n", id)
 
-	for i:=0; i < len(mem_list); i++{
+	for i:=0; i < len(server_list); i++{
 		clt.recvACK(dealer)
 		clt.writer_ts_lock.Lock()
 		numAck = len(clt.writer_ts[clt.counter])
@@ -95,7 +95,7 @@ func (clt *Client) recvRESP(dealer *zmq.Socket) {
 	msgBytes,_ := dealer.RecvBytes(0)
 	msg := getMsgFromGob(msgBytes)
 	if msg.Kind != RESP {
-		clt.recvACK(dealer)
+		clt.recvRESP(dealer)
 	} else{
 		entry := ReadBufEntry{val: msg.Val, vec_clock: msg.Vec}
 		clt.readBuf_lock.Lock()
@@ -108,11 +108,10 @@ func (clt *Client) recvRESP(dealer *zmq.Socket) {
 
 // Actions to take if receive ACK message
 func (clt *Client) recvACK(dealer *zmq.Socket) {
-	fmt.Println("recv ACK")
 	msgBytes,_ := dealer.RecvBytes(0)
 	msg := getMsgFromGob(msgBytes)
 	if msg.Kind != ACK {
-		clt.recvRESP(dealer)
+		clt.recvACK(dealer)
 	} else{
 		clt.writer_ts_lock.Lock()
 		if _, isIn := clt.writer_ts[msg.Counter]; !isIn {

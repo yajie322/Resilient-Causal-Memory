@@ -48,13 +48,11 @@ func (svr *Server) serverWorker() {
 
 		// create response message
 		tmpMsg := svr.createRep(message)
-		fmt.Println(tmpMsg)
 		// encode message
 		tmpGob := getGobFromMsg(tmpMsg)
 		msgReply[1] = tmpGob
 
 		worker.SendMessage(msgReply)
-		fmt.Println("replied..")
 	}
 }
 
@@ -73,8 +71,6 @@ func (svr *Server) createRep(input Message) *Message {
 		//	svr.recvUpdate(input.Key, input.Val, input.Id, input.Counter, input.Vec)
 		//	output = nil
 	}
-	fmt.Println("haha")
-	fmt.Println(output)
 	return output
 }
 
@@ -84,7 +80,7 @@ func (svr *Server) subscribe(){
 		svr.subscriber.Recv(0)
 		// get contents
 		b,_ := svr.subscriber.RecvMessageBytes(0)
-		msg := getMsgFromGob(b[1])
+		msg := getMsgFromGob(b[0])
 		fmt.Println(msg)
 		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 	}

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	zmq "github.com/pebbe/zmq4"
-	"net"
+	// "net"
 	"sync"
 )
 
@@ -26,7 +26,7 @@ type Server struct {
 	subscriber		*zmq.Socket
 }
 
-func (svr *Server) init() {
+func (svr *Server) init(pub_port string) {
 	svr.update_needed = make(chan bool, 100)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int]string)
@@ -44,7 +44,7 @@ func (svr *Server) init() {
 	// init witness
 	svr.witness = make(map[WitnessEntry]int)
 	svr.witness_lock = sync.Mutex{}
-	svr.publisher = createPublisherSocket(pubPort)
+	svr.publisher = createPublisherSocket(pub_port)
 	svr.subscriber = createSubscriberSocket()
 	go svr.subscribe()
 }
@@ -70,7 +70,7 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 	publish(&msg,svr.publisher)
-	fmt.Printf("Server %d published msg UPDATE", id)
+	fmt.Printf("Server %d published msg UPDATE\n", id)
 
 	// wait until t_server is greater than t_i
 	svr.vec_clock_cond.L.Lock()
@@ -108,50 +108,50 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 	}
 }
 
-// Server listener
-func (svr *Server) recv() {
-	// resolve for udp address by membership list and id
-	udpAddr, err1 := net.ResolveUDPAddr("udp4", mem_list[id])
-	if err1 != nil {
-		fmt.Println("address not found")
-	}
+// // Server listener
+// func (svr *Server) recv() {
+// 	// resolve for udp address by membership list and id
+// 	udpAddr, err1 := net.ResolveUDPAddr("udp4", mem_list[id])
+// 	if err1 != nil {
+// 		fmt.Println("address not found")
+// 	}
 
-	// create listner socket by address
-	conn, err2 := net.ListenUDP("udp", udpAddr)
-	if err2 != nil {
-		fmt.Println("address can't listen")
-	}
-	defer conn.Close()
+// 	// create listner socket by address
+// 	conn, err2 := net.ListenUDP("udp", udpAddr)
+// 	if err2 != nil {
+// 		fmt.Println("address can't listen")
+// 	}
+// 	defer conn.Close()
 
-	for status {
-		c := make(chan Message)
+// 	for status {
+// 		c := make(chan Message)
 
-		go func() {
-			//buffer size is 1024 bytes
-			buf := make([]byte, 1024)
-			num, _, err3 := conn.ReadFromUDP(buf)
-			if err3 != nil {
-				fmt.Println(err3)
-			}
-			//deserialize the received data and output to channel
-			c <- getMsgFromGob(buf[:num])
-		}()
+// 		go func() {
+// 			//buffer size is 1024 bytes
+// 			buf := make([]byte, 1024)
+// 			num, _, err3 := conn.ReadFromUDP(buf)
+// 			if err3 != nil {
+// 				fmt.Println(err3)
+// 			}
+// 			//deserialize the received data and output to channel
+// 			c <- getMsgFromGob(buf[:num])
+// 		}()
 
-		msg := <-c
+// 		msg := <-c
 
-		switch msg.Kind {
-		case READ:
-			// fmt.Println("server receives READ message with vec_clock", msg.Vec)
-			go svr.recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
-		case WRITE:
-			// fmt.Println("server receives WRITE message with vec_clock", msg.Vec)
-			go svr.recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
-		case UPDATE:
-			// fmt.Println("server receives UPDATE message with vec_clock", msg.Vec)
-			go svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
-		}
-	}
-}
+// 		switch msg.Kind {
+// 		case READ:
+// 			// fmt.Println("server receives READ message with vec_clock", msg.Vec)
+// 			go svr.recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
+// 		case WRITE:
+// 			// fmt.Println("server receives WRITE message with vec_clock", msg.Vec)
+// 			go svr.recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+// 		case UPDATE:
+// 			// fmt.Println("server receives UPDATE message with vec_clock", msg.Vec)
+// 			go svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+// 		}
+// 	}
+// }
 
 // infinitely often update the local storage
 func (svr *Server) update() {

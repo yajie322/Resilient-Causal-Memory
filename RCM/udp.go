@@ -29,7 +29,7 @@ func udpSend(msg *Message, addr string) {
 func udpBroadcast(msg *Message){
 	//use gob to serialized data before sending
 	b := getGobFromMsg(msg)
-	for Id,addr := range mem_list {
+	for Id,addr := range server_list {
 		if (Id != id) {
 			// resolve address
 			udpAddr,err1 := net.ResolveUDPAddr("udp4", addr)

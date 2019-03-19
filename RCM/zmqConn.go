@@ -1,13 +1,14 @@
 package main
 
 import (
-	zmq "github.com/pebbe/zmq4"
+	"fmt"
+ 	zmq "github.com/pebbe/zmq4"
 )
 
 func createDealerSocket() *zmq.Socket {
 	dealer,_ := zmq.NewSocket(zmq.DEALER)
 	var addr string
-	for _,server := range mem_list {
+	for _,server := range server_list {
 		addr = "tcp://" + server
 		dealer.Connect(addr)
 	}
@@ -24,9 +25,11 @@ func createPublisherSocket(port string) *zmq.Socket {
 func createSubscriberSocket() *zmq.Socket {
 	subscriber,_ := zmq.NewSocket(zmq.SUB)
 	var addr string
-	for _,server := range mem_list {
-		addr = "tcp://" + server
-		subscriber.Connect(addr)
+	for key,server := range server_pub {
+		if key != id {
+			addr = "tcp://" + server
+			subscriber.Connect(addr)
+		}
 	}
 	subscriber.SetSubscribe(FILTER)
 	return subscriber
@@ -34,7 +37,8 @@ func createSubscriberSocket() *zmq.Socket {
 
 func publish(msg *Message, publisher *zmq.Socket) {
 	b := getGobFromMsg(msg)
-	for i := 0; i < len(mem_list); i++ {
+	fmt.Println(b)
+	for i := 0; i < len(server_list); i++ {
 		publisher.Send(FILTER, zmq.SNDMORE)
 		publisher.SendBytes(b,0)
 	}
@@ -44,7 +48,7 @@ func publish(msg *Message, publisher *zmq.Socket) {
 func zmqBroadcast(msg *Message, dealer *zmq.Socket){
 	//use gob to serialized data before sending
 	b := getGobFromMsg(msg)
-	for i := 0; i < len(mem_list); i++ {
+	for i := 0; i < len(server_list); i++ {
 		dealer.SendBytes(b,0)
 	}
 }

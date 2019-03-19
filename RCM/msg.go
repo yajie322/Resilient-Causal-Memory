@@ -34,7 +34,8 @@ func getMsgFromGob(msgBytes []byte) Message {
 	buff.Write(msgBytes)
 	dec := gob.NewDecoder(&buff)
 	if err := dec.Decode(&msg); err != nil {
-		fmt.Println(err)
+		fmt.Println("Error occurred at line 37 in file msg.go", err)
+		fmt.Println(msgBytes)
 	}
 	return msg
 }
