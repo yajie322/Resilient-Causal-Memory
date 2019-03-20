@@ -47,6 +47,9 @@ func zmqBroadcast(msg *Message, dealer *zmq.Socket){
 	//use gob to serialized data before sending
 	b := getGobFromMsg(msg)
 	for i := 0; i < len(server_list); i++ {
-		dealer.SendBytes(b,0)
+		_, err := dealer.SendBytes(b,0)
+		if (err != nil) {
+			fmt.Println("Error occurred when dealer sending msg, ", err)
+		}
 	}
 }

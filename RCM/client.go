@@ -42,7 +42,7 @@ func (clt *Client) init() {
 
 func (clt *Client) read(key int) string {
 	dealer := createDealerSocket()
-	defer fmt.Println("dealer socket closed")
+	defer fmt.Println(dealer.String())
 	defer dealer.Close()
 	msg := Message{Kind: READ, Key: key, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg,dealer)
@@ -66,7 +66,6 @@ func (clt *Client) read(key int) string {
 func (clt *Client) write(key int, value string) {
 	var numAck int
 	dealer := createDealerSocket()
-	defer fmt.Println("dealer socket closed")
 	defer dealer.Close()
 	clt.vec_clock[node_id] += 1
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
@@ -74,11 +73,12 @@ func (clt *Client) write(key int, value string) {
 	fmt.Printf("Client %d broadcasted msg WRITE\n", node_id)
 
 	for i:=0; i < len(server_list); i++{
+		fmt.Println(dealer.String())
 		clt.recvACK(dealer)
 		clt.writer_ts_lock.Lock()
 		numAck = len(clt.writer_ts[clt.counter])
 		clt.writer_ts_lock.Unlock()
-		if numAck > F{
+		if numAck > F {
 			break
 		}
 	}
@@ -94,7 +94,11 @@ func (clt *Client) write(key int, value string) {
 
 // Actions to take if receive RESP message
 func (clt *Client) recvRESP(dealer *zmq.Socket) {
-	msgBytes,_ := dealer.RecvBytes(0)
+	msgBytes, err := dealer.RecvBytes(0)
+	if (err != nil) {
+		fmt.Println("Error occurred when client receiving RESP, err msg: ", err)
+		fmt.Println(dealer.String())
+	}
 	msg := getMsgFromGob(msgBytes)
 	if msg.Kind != RESP {
 		clt.recvRESP(dealer)
@@ -113,6 +117,7 @@ func (clt *Client) recvACK(dealer *zmq.Socket) {
 	msgBytes, err := dealer.RecvBytes(0)
 	if (err != nil) {
 		fmt.Println("Error occurred when client receiving ACK, err msg: ", err)
+		fmt.Println(dealer.String())
 	}
 	msg := getMsgFromGob(msgBytes)
 	if msg.Kind != ACK {
