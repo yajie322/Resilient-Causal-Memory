@@ -70,11 +70,13 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 	publish(&msg,svr.publisher)
-	fmt.Printf("Server %d published msg UPDATE\n", id)
+	fmt.Printf("Server %d published msg UPDATE\n", node_id)
 
 	// wait until t_server is greater than t_i
 	svr.vec_clock_cond.L.Lock()
 	for !smallerEqualExceptI(vec_i, svr.vec_clock, 999999) {
+		fmt.Println(vec_i)
+		fmt.Println(svr.vec_clock)
 		svr.vec_clock_cond.Wait()
 	}
 	svr.vec_clock_cond.L.Unlock()
@@ -99,6 +101,7 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 	if witness_num == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 		publish(&msg,svr.publisher)
+		fmt.Printf("Server %d published msg UPDATE\n", node_id)
 	}
 	if witness_num == F+1 {
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}

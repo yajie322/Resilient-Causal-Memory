@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	id        	int
+	node_id     int
 	node_type 	string
 	// mutex = new(sync.mutex)
 	server_list = make(map[int]string)
@@ -29,7 +29,7 @@ func main() {
 
 	// get node id
 	// id,_ = strconv.Atoi(os.Getenv("id"))
-	flag.IntVar(&id, "id", 0, "specify the node id")
+	flag.IntVar(&node_id, "id", 0, "specify the node id")
 	flag.Parse()
 	// read config file
 	config, err := os.Open("config.txt")
@@ -54,9 +54,9 @@ func main() {
 	case "server":
 		var node Server
 
-		pub_port := strings.Split(server_pub[id], ":")[1]
+		pub_port := strings.Split(server_pub[node_id], ":")[1]
 		node.init(pub_port)
-		server_port := strings.Split(server_list[id], ":")[1]
+		server_port := strings.Split(server_list[node_id], ":")[1]
 		go node.serverTask(server_port)
 
 		//go node.recv()

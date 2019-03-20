@@ -6,7 +6,6 @@ const UPDATE = 3
 const RESP = 4
 const ACK = 5
 
-const NUMWORKER = 5
 const FILTER = ""
 
 const F = 1

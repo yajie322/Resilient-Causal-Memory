@@ -17,9 +17,7 @@ func (svr *Server) serverTask(port string) {
 	defer backend.Close()
 	backend.Bind("inproc://backend")
 
-	for i:= 0; i < NUMWORKER; i++{
-		go svr.serverWorker()
-	}
+	go svr.serverWorker()
 
 	//  Connect backend to frontend via a proxy
 	err := zmq.Proxy(frontend, backend, nil)
@@ -43,16 +41,20 @@ func (svr *Server) serverWorker() {
 		}
 		// decode message
 		message := getMsgFromGob(msg[1])
-		fmt.Println(message)
 		msgReply[0] = msg[0]
 
 		// create response message
 		tmpMsg := svr.createRep(message)
+		fmt.Println(tmpMsg)
 		// encode message
 		tmpGob := getGobFromMsg(tmpMsg)
 		msgReply[1] = tmpGob
+		fmt.Println(msgReply)
 
-		worker.SendMessage(msgReply)
+		numBytes, err := worker.SendMessage(msgReply)
+		if (err != nil) {
+			fmt.Println("Error occurred when server worker sending reply, # of bytes sent is ", numBytes)
+		}
 	}
 }
 
@@ -66,10 +68,6 @@ func (svr *Server) createRep(input Message) *Message {
 		case WRITE:
 			// fmt.Println("server receives WRITE message with vec_clock", msg.Vec)
 			output = svr.recvWrite(input.Key, input.Val, input.Id, input.Counter, input.Vec)
-		//case UPDATE:
-		//	// fmt.Println("server receives UPDATE message with vec_clock", msg.Vec)
-		//	svr.recvUpdate(input.Key, input.Val, input.Id, input.Counter, input.Vec)
-		//	output = nil
 	}
 	return output
 }
@@ -78,7 +76,7 @@ func (svr *Server) subscribe(){
 	for{
 		// get bytes
 		b,_ := svr.subscriber.RecvMessageBytes(0)
-		msg := getMsgFromGob(b[1])
+		msg := getMsgFromGob(b[0])
 		fmt.Println(msg)
 		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 	}
