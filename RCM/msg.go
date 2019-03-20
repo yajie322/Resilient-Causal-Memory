@@ -36,6 +36,7 @@ func getMsgFromGob(msgBytes []byte) Message {
 	if err := dec.Decode(&msg); err != nil {
 		fmt.Println("Error occurred at line 37 in file msg.go", err)
 		fmt.Println(msgBytes)
+		return Message{Kind: ERROR, Key: -1, Val: "", Id: -1, Counter: -1, Vec: make([]int,1)}
 	}
 	return msg
 }
