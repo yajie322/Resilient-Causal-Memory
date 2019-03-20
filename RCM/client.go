@@ -115,7 +115,7 @@ func (clt *Client) recvRESP(dealer *zmq.Socket) {
 // Actions to take if receive ACK message
 func (clt *Client) recvACK(dealer *zmq.Socket) {
 	msgBytes, err := dealer.RecvBytes(0)
-	if (err != nil) {
+	if err != nil {
 		fmt.Println("Error occurred when client receiving ACK, err msg: ", err)
 		fmt.Println(dealer.String())
 	}

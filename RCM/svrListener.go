@@ -44,6 +44,9 @@ func (svr *Server) serverWorker() {
 		}
 		// decode message
 		message := getMsgFromGob(msg[1])
+		if message.Kind == ERROR{
+			continue
+		}
 		msgReply[0] = msg[0]
 
 		// create response message
@@ -80,6 +83,9 @@ func (svr *Server) subscribe(){
 		// get bytes
 		b,_ := svr.subscriber.RecvMessageBytes(0)
 		msg := getMsgFromGob(b[0])
+		if msg.Kind != UPDATE{
+			continue
+		}
 		fmt.Println(msg)
 		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 	}
