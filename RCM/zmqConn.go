@@ -33,11 +33,13 @@ func createSubscriberSocket() *zmq.Socket {
 	return subscriber
 }
 
-func publish(msg *Message, publisher *zmq.Socket) {
+func (svr *Server) publish(msg *Message) {
 	b := getGobFromMsg(msg)
 	// publisher.Send(FILTER, zmq.SNDMORE)
-	_, err := publisher.SendBytes(b,0)
-	if (err != nil) {
+	svr.publisher_lock.Lock()
+	_, err := svr.publisher.SendBytes(b,0)
+	svr.publisher_lock.Unlock()
+	if err != nil {
 		fmt.Println("Error occurred at line 42 in file zmqConn.go", err)
 	}
 }

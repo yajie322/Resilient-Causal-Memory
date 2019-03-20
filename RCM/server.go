@@ -22,8 +22,9 @@ type Server struct {
 	queue          Queue
 	witness        map[WitnessEntry]int
 	witness_lock   sync.Mutex
-	publisher		*zmq.Socket
-	subscriber		*zmq.Socket
+	publisher_lock sync.Mutex
+	publisher      *zmq.Socket
+	subscriber     *zmq.Socket
 }
 
 func (svr *Server) init(pub_port string) {
@@ -69,7 +70,7 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) *Message 
 func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) *Message{
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-	publish(&msg,svr.publisher)
+	svr.publish(&msg)
 	fmt.Printf("Server %d published msg UPDATE\n", node_id)
 
 	// wait until t_server is greater than t_i
@@ -100,7 +101,7 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 
 	if witness_num == 1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-		publish(&msg,svr.publisher)
+		svr.publish(&msg)
 		fmt.Printf("Server %d published msg UPDATE\n", node_id)
 	}
 	if witness_num == F+1 {
