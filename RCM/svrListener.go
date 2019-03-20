@@ -51,11 +51,9 @@ func (svr *Server) serverWorker() {
 
 		// create response message
 		tmpMsg := svr.createRep(message)
-		fmt.Println(tmpMsg)
 		// encode message
 		tmpGob := getGobFromMsg(tmpMsg)
 		msgReply[1] = tmpGob
-		fmt.Println(msgReply)
 
 		numBytes, err := worker.SendMessage(msgReply)
 		if err != nil {
@@ -86,7 +84,6 @@ func (svr *Server) subscribe(){
 		if msg.Kind != UPDATE{
 			continue
 		}
-		fmt.Println(msg)
 		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 	}
 }
