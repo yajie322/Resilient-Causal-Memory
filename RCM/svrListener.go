@@ -9,11 +9,13 @@ import (
 func (svr *Server) serverTask(port string) {
 	// Set the ZMQ sockets
 	frontend,_ := zmq.NewSocket(zmq.ROUTER)
+	defer fmt.Println("frontend socket closed")
 	defer frontend.Close()
 	frontend.Bind("tcp://*:"+port)
 
 	//  Backend socket talks to workers over inproc
 	backend, _ := zmq.NewSocket(zmq.DEALER)
+	defer fmt.Println("backend socket closed")
 	defer backend.Close()
 	backend.Bind("inproc://backend")
 
@@ -26,6 +28,7 @@ func (svr *Server) serverTask(port string) {
 
 func (svr *Server) serverWorker() {
 	worker, _ := zmq.NewSocket(zmq.DEALER)
+	defer fmt.Println("worker socket closed")
 	defer worker.Close()
 	worker.Connect("inproc://backend")
 	msgReply := make([][]byte, 2)

@@ -42,6 +42,7 @@ func (clt *Client) init() {
 
 func (clt *Client) read(key int) string {
 	dealer := createDealerSocket()
+	defer fmt.Println("dealer socket closed")
 	defer dealer.Close()
 	msg := Message{Kind: READ, Key: key, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg,dealer)
@@ -65,6 +66,7 @@ func (clt *Client) read(key int) string {
 func (clt *Client) write(key int, value string) {
 	var numAck int
 	dealer := createDealerSocket()
+	defer fmt.Println("dealer socket closed")
 	defer dealer.Close()
 	clt.vec_clock[node_id] += 1
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
