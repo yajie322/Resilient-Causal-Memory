@@ -6,12 +6,12 @@ import (
 	"log"
 )
 
-func (svr *Server) serverTask(port string) {
+func (svr *Server) serverTask(svrAddr string) {
 	// Set the ZMQ sockets
 	frontend,_ := zmq.NewSocket(zmq.ROUTER)
 	defer fmt.Println("frontend socket closed")
 	defer frontend.Close()
-	frontend.Bind("tcp://*:"+port)
+	frontend.Bind("tcp://" + svrAddr)
 
 	//  Backend socket talks to workers over inproc
 	backend, _ := zmq.NewSocket(zmq.DEALER)
@@ -55,7 +55,7 @@ func (svr *Server) serverWorker() {
 		fmt.Println(msgReply)
 
 		numBytes, err := worker.SendMessage(msgReply)
-		if (err != nil) {
+		if err != nil {
 			fmt.Println("Error occurred when server worker sending reply, # of bytes sent is ", numBytes)
 		}
 	}

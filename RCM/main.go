@@ -54,10 +54,8 @@ func main() {
 	case "server":
 		var node Server
 
-		pub_port := strings.Split(server_pub[node_id], ":")[1]
-		node.init(pub_port)
-		server_port := strings.Split(server_list[node_id], ":")[1]
-		go node.serverTask(server_port)
+		node.init(server_pub[node_id])
+		go node.serverTask(server_list[node_id])
 
 		//go node.recv()
 		for status {

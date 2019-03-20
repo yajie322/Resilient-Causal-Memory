@@ -15,9 +15,9 @@ func createDealerSocket() *zmq.Socket {
 	return dealer
 }
 
-func createPublisherSocket(port string) *zmq.Socket {
+func createPublisherSocket(pubAddr string) *zmq.Socket {
 	publisher,_ := zmq.NewSocket(zmq.PUB)
-	publisher.Bind("tcp://*:" + port)
+	publisher.Bind("tcp://" + pubAddr)
 	return publisher
 }
 
