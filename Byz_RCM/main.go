@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	id        int
-	node_type string
+	node_id     int
+	node_type 	string
 	// mutex = new(sync.mutex)
-	mem_list = make(map[int]string)
-	status   bool
+	server_list = make(map[int]string)
+	server_pub = make(map[int]string)
+	status   	bool
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 
 	// get node id
 	// id,_ = strconv.Atoi(os.Getenv("id"))
-	flag.IntVar(&id, "id", 0, "specify the node id")
+	flag.IntVar(&node_id, "id", 0, "specify the node id")
 	flag.Parse()
 	// read config file
 	config, err := os.Open("config.txt")
@@ -44,24 +45,27 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		addr := line[1]
-		mem_list[id] = addr
+		server_list[id] = line[1]
+		server_pub[id] = line[2]
 	}
 	config.Close()
 
 	switch node_type {
 	case "server":
 		var node Server
-		node.init(len(mem_list))
-		go node.recv()
+
+		node.init(server_pub[node_id])
+		go node.serverTask(server_list[node_id])
+
+		//go node.recv()
 		for status {
 			<-node.update_needed
 			go node.update()
 		}
 	case "client":
 		var node Client
-		node.init(len(mem_list))
-		go node.recv()
+		node.init()
+		//go node.recv()
 		// node.userInput()
 		node.workload(10000)
 	}
