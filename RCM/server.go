@@ -26,7 +26,7 @@ type Server struct {
 	subscriber     *zmq.Socket
 }
 
-func (svr *Server) init(pub_port string) {
+func (svr *Server) init(pubAddr string) {
 	svr.update_needed = make(chan bool, 100)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int]string)
@@ -43,7 +43,7 @@ func (svr *Server) init(pub_port string) {
 	svr.queue.Init()
 	// init witness
 	svr.witness = make(map[WitnessEntry]int)
-	svr.publisher = createPublisherSocket(pub_port)
+	svr.publisher = createPublisherSocket(pubAddr)
 	svr.subscriber = createSubscriberSocket()
 	go svr.subscribe()
 }

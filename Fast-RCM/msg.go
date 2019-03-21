@@ -35,6 +35,7 @@ func getMsgFromGob(msgBytes []byte) Message {
 	dec := gob.NewDecoder(&buff)
 	if err := dec.Decode(&msg); err != nil {
 		fmt.Println(err)
+		return Message{Kind: ERROR, Key: -1, Val: "", Id: -1, Counter: -1, Vec: make([]int,1)}
 	}
 	return msg
 }

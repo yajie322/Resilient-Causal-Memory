@@ -78,7 +78,7 @@ func (clt *Client) write(key int, value string) {
 // Actions to take if receive RESP message
 func (clt *Client) recvRESP(dealer *zmq.Socket) {
 	msgBytes, err := dealer.RecvBytes(0)
-	if (err != nil) {
+	if err != nil {
 		fmt.Println("Error occurred when client receiving RESP, err msg: ", err)
 		fmt.Println(dealer.String())
 	}
