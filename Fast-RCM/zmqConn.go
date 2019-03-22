@@ -8,7 +8,7 @@ import (
 func createDealerSocket() *zmq.Socket {
 	dealer,_ := zmq.NewSocket(zmq.DEALER)
 	var addr string
-	for _,server := range svrList {
+	for _,server := range server_list {
 		addr = "tcp://" + server
 		dealer.Connect(addr)
 	}
@@ -25,7 +25,7 @@ func createPublisherSocket(pubAddr string) *zmq.Socket {
 func createSubscriberSocket() *zmq.Socket {
 	subscriber,_ := zmq.NewSocket(zmq.SUB)
 	var addr string
-	for _,server := range svrPub {
+	for _,server := range server_pub {
 		addr = "tcp://" + server
 		subscriber.Connect(addr)
 	}
@@ -47,7 +47,7 @@ func (svr *Server) publish(msg *Message) {
 func zmqBroadcast(msg *Message, dealer *zmq.Socket){
 	//use gob to serialized data before sending
 	b := getGobFromMsg(msg)
-	for i := 0; i < len(svrList); i++ {
+	for i := 0; i < len(server_list); i++ {
 		if _, err := dealer.SendBytes(b,0); err != nil {
 			fmt.Println("Error occurred when dealer sending msg, ", err)
 		}
