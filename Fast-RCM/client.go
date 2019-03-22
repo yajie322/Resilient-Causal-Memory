@@ -1,9 +1,8 @@
 package main
 
 import (
-	"net"
 	"fmt"
-	"sync"
+	zmq "github.com/pebbe/zmq4"
 	// "strconv"
 )
 
@@ -16,11 +15,11 @@ type Client struct {
 	vec_clock		[]int
 	counter			int
 	readBuf 		map[int]ReadBufEntry
-	readBuf_lock	sync.RWMutex
-	readBuf_cond	*sync.Cond
+	//readBuf_lock	sync.RWMutex
+	//readBuf_cond	*sync.Cond
 	writeBuf		map[int][]int
-	writeBuf_lock	sync.RWMutex
-	writeBuf_cond	*sync.Cond
+	//writeBuf_lock	sync.RWMutex
+	//writeBuf_cond	*sync.Cond
 	localBuf		map[int]string
 }
 
@@ -33,24 +32,26 @@ func (clt *Client) init(group_size int) {
 	clt.counter = 0
 	// init read buffer as counter(int) - (value, timestamp) tuple (ReadBufEntry) pairs
 	clt.readBuf = make(map[int] ReadBufEntry)
-	clt.readBuf_lock = sync.RWMutex{}
-	clt.readBuf_cond = sync.NewCond(&clt.readBuf_lock)
+	//clt.readBuf_lock = sync.RWMutex{}
+	//clt.readBuf_cond = sync.NewCond(&clt.readBuf_lock)
 	clt.writeBuf = make(map[int] []int)
-	clt.writeBuf_lock = sync.RWMutex{}
-	clt.writeBuf_cond = sync.NewCond(&clt.writeBuf_lock)
+	//clt.writeBuf_lock = sync.RWMutex{}
+	//clt.writeBuf_cond = sync.NewCond(&clt.writeBuf_lock)
 	clt.localBuf = make(map[int] string)
 }
 
 func (clt *Client) read(key int) string {
+	dealer := createDealerSocket()
+	defer dealer.Close()
 	msg := Message{Kind: READ, Key: key, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
-	broadcast(&msg)
-	clt.readBuf_cond.L.Lock()
-	entry, isIn := clt.readBuf[clt.counter]
-	for !isIn {
-		clt.readBuf_cond.Wait()
-		entry, isIn = clt.readBuf[clt.counter]
+	zmqBroadcast(&msg,dealer)
+	for i:=0; i < len(svrList); i++{
+		clt.recvRESP(dealer)
+		if _,isIn := clt.readBuf[clt.counter]; isIn{
+			break
+		}
 	}
-	clt.readBuf_cond.L.Unlock()
+	entry,_ := clt.readBuf[clt.counter]
 	clt.counter += 1
 	if smallerEqualExceptI(entry.vec_clock, clt.vec_clock, 999999) {
 		val, isIn := clt.localBuf[key]
@@ -67,77 +68,90 @@ func (clt *Client) read(key int) string {
 
 func (clt *Client) write(key int, value string) {
 	clt.vec_clock[id] += 1
+	dealer := createDealerSocket()
+	defer dealer.Close()
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: id, Counter: clt.counter, Vec: clt.vec_clock}
-	broadcast(&msg)
-	clt.writeBuf_cond.L.Lock()
-	entry, isIn := clt.writeBuf[clt.counter]
-	for !isIn {
-		clt.writeBuf_cond.Wait()
-		entry, isIn = clt.writeBuf[clt.counter]
+	zmqBroadcast(&msg,dealer)
+
+	for i:=0; i < len(svrList); i++{
+		clt.recvACK(dealer)
+		if _,isIn := clt.writeBuf[clt.counter]; isIn{
+			break
+		}
 	}
-	clt.writeBuf_cond.L.Unlock()
+	entry,_ := clt.writeBuf[clt.counter]
 	clt.merge_clock(entry)
 	clt.localBuf[key] = value
 	clt.counter += 1
-	// return WRITE-ACK
 }
 
-func (clt *Client) recvRESP(counter int, val string, vec []int) {
-	entry := ReadBufEntry{val: val, vec_clock: vec}
-	clt.readBuf_lock.Lock()
-	clt.readBuf[counter] = entry
-	clt.readBuf_cond.Broadcast()
-	clt.readBuf_lock.Unlock()
-}
-func (clt *Client) recvACK(counter int, vec []int) {
-	// if _, isIn := clt.writeBuf[counter]; isIn {
-	// 	panic("write operation " + strconv.Itoa(counter) + " is already in the write buffer")
-	// }
-	clt.writeBuf_lock.Lock()
-	clt.writeBuf[counter] = vec
-	fmt.Println("ACK message received vec", vec)
-	clt.writeBuf_cond.Broadcast()
-	clt.writeBuf_lock.Unlock()
-}
-
-func (clt *Client) recv(){
-	// resolve for udp address by membership list and id
-	udpAddr,err1 := net.ResolveUDPAddr("udp4", mem_list[id])
-	if err1 != nil {
-		fmt.Println("address not found")
+func (clt *Client) recvRESP(dealer *zmq.Socket){
+	msgBytes,err := dealer.RecvBytes(0)
+	if err != nil{
+		fmt.Println("client.go line 94, dealer RecvBytes: {}", err)
 	}
-
-	// create listner socket by address
-	conn,err2 := net.ListenUDP("udp", udpAddr)
-	if err2 != nil {
-		fmt.Println("address can't listen")
-	}
-	defer conn.Close()
-
-	for status {
-		c := make(chan Message)
-
-		go func() {
-			//buffer size is 1024 bytes
-			buf := make([]byte, 1024)
-			num,_,err3 := conn.ReadFromUDP(buf)
-			if err3 != nil {
-				fmt.Println(err3)
-			}
-			//deserialize the received data and output to channel
-			c <- getMsgFromGob(buf[:num])
-		}()
-
-		msg := <-c
-
-		switch msg.Kind {
-			case RESP:
-				clt.recvRESP(msg.Counter, msg.Val, msg.Vec)
-			case ACK:
-				clt.recvACK(msg.Counter, msg.Vec)
-		}
+	msg := getMsgFromGob(msgBytes)
+	if msg.Kind != RESP {
+		clt.recvRESP(dealer)
+	} else{
+		clt.readBuf[msg.Counter] = ReadBufEntry{val: msg.Val, vec_clock: msg.Vec}
+		fmt.Println("RESP message received vec", msg.Vec)
 	}
 }
+
+func (clt *Client) recvACK(dealer *zmq.Socket) {
+	// counter int, vec []int
+	msgBytes,err := dealer.RecvBytes(0)
+	if err != nil{
+		fmt.Println("client.go line 108, dealer RecvBytes: {}", err)
+	}
+	msg := getMsgFromGob(msgBytes)
+	if msg.Kind != ACK {
+		clt.recvACK(dealer)
+	} else{
+		clt.writeBuf[msg.Counter] = msg.Vec
+		fmt.Println("ACK message received vec", msg.Vec)
+	}
+}
+
+//func (clt *Client) recv(){
+//	// resolve for udp address by membership list and id
+//	udpAddr,err1 := net.ResolveUDPAddr("udp4", svrList[id])
+//	if err1 != nil {
+//		fmt.Println("address not found")
+//	}
+//
+//	// create listner socket by address
+//	conn,err2 := net.ListenUDP("udp", udpAddr)
+//	if err2 != nil {
+//		fmt.Println("address can't listen")
+//	}
+//	defer conn.Close()
+//
+//	for status {
+//		c := make(chan Message)
+//
+//		go func() {
+//			//buffer size is 1024 bytes
+//			buf := make([]byte, 1024)
+//			num,_,err3 := conn.ReadFromUDP(buf)
+//			if err3 != nil {
+//				fmt.Println(err3)
+//			}
+//			//deserialize the received data and output to channel
+//			c <- getMsgFromGob(buf[:num])
+//		}()
+//
+//		msg := <-c
+//
+//		switch msg.Kind {
+//			case RESP:
+//				clt.recvRESP(msg.Counter, msg.Val, msg.Vec)
+//			case ACK:
+//				clt.recvACK(msg.Counter, msg.Vec)
+//		}
+//	}
+//}
 
 func (clt *Client) merge_clock(vec []int) {
 	if len(clt.vec_clock) != len(vec) {

@@ -15,7 +15,8 @@ var(
 	id int
     node_type string
     // mutex = new(sync.mutex)
-	mem_list = make(map[int]string)
+    svrList = make(map[int]string)
+    svrPub = make(map[int]string)
     status bool
 )
 
@@ -44,24 +45,25 @@ func main(){
             fmt.Println(err)
             return
         }
-        addr := line[1]
-        mem_list[id] = addr
+        svrList[id] = line[1]
+        svrPub[id] = line[2]
     }
     config.Close()
 
     switch node_type {
     case "server":
         var node Server
-        node.init(len(mem_list))
-        go node.recv()
+        node.init(len(svrList),svrPub[id])
+        //go node.recv()
+        go node.serverTask(svrList[id])
         for status {
             <- node.update_needed
             go node.update()
         }
     case "client":
         var node Client
-        node.init(len(mem_list))
-        go node.recv()
+        node.init(len(svrList))
+        //go node.recv()
         // node.userInput()
         node.workload(10000)
     }

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	zmq "github.com/pebbe/zmq4"
-	// "net"
 	"sync"
 )
 
@@ -43,7 +42,7 @@ func (svr *Server) init(pub_port string) {
 	svr.queue.Init()
 	// init witness
 	svr.witness = make(map[WitnessEntry]int)
-	svr.publisher = createPublisherSocket(pub_port)
+	svr.publisher = createPublisherSocket(pubAddr)
 	svr.subscriber = createSubscriberSocket()
 	go svr.subscribe()
 }
