@@ -27,7 +27,7 @@ type Server struct {
 }
 
 func (svr *Server) init(pub_port string) {
-	svr.update_needed = make(chan bool, 100)
+	svr.update_needed = make(chan bool, 99999)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int]string)
 	svr.m_data_lock = sync.RWMutex{}
@@ -105,51 +105,6 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 		// fmt.Println("server enqueues entry: ", queue_entry)
 	}
 }
-
-// // Server listener
-// func (svr *Server) recv() {
-// 	// resolve for udp address by membership list and id
-// 	udpAddr, err1 := net.ResolveUDPAddr("udp4", mem_list[id])
-// 	if err1 != nil {
-// 		fmt.Println("address not found")
-// 	}
-
-// 	// create listner socket by address
-// 	conn, err2 := net.ListenUDP("udp", udpAddr)
-// 	if err2 != nil {
-// 		fmt.Println("address can't listen")
-// 	}
-// 	defer conn.Close()
-
-// 	for status {
-// 		c := make(chan Message)
-
-// 		go func() {
-// 			//buffer size is 1024 bytes
-// 			buf := make([]byte, 1024)
-// 			num, _, err3 := conn.ReadFromUDP(buf)
-// 			if err3 != nil {
-// 				fmt.Println(err3)
-// 			}
-// 			//deserialize the received data and output to channel
-// 			c <- getMsgFromGob(buf[:num])
-// 		}()
-
-// 		msg := <-c
-
-// 		switch msg.Kind {
-// 		case READ:
-// 			// fmt.Println("server receives READ message with vec_clock", msg.Vec)
-// 			go svr.recvRead(msg.Key, msg.Id, msg.Counter, msg.Vec)
-// 		case WRITE:
-// 			// fmt.Println("server receives WRITE message with vec_clock", msg.Vec)
-// 			go svr.recvWrite(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
-// 		case UPDATE:
-// 			// fmt.Println("server receives UPDATE message with vec_clock", msg.Vec)
-// 			go svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
-// 		}
-// 	}
-// }
 
 // infinitely often update the local storage
 func (svr *Server) update() {

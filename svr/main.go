@@ -16,7 +16,7 @@ const CLIENT_READ = 2
 const QUIT = 3
 
 var (
-	id int
+	node_id int
 	mutex = &sync.Mutex{}
 	svr_list = make(map[int]string)
 	clt_list = make(map[int]string)
@@ -29,7 +29,7 @@ var (
 func main() {
 
 	flag.StringVar(&node_type, "type", "s", "specify the node type")
-	flag.IntVar(&id, "id", 0, "specify the node id")
+	flag.IntVar(&node_id, "id", 0, "specify the node id")
 	flag.Parse()
 
 	// read config file and get mem_list

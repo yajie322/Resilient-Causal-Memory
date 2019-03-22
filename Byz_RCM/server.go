@@ -22,7 +22,6 @@ type Server struct {
 	vec_clock_cond *sync.Cond
 	queue          Queue
 	witness        map[WitnessEntry]int
-	witness_lock   sync.Mutex
 	publisher_lock sync.Mutex
 	publisher      *zmq.Socket
 	subscriber     *zmq.Socket
@@ -45,7 +44,6 @@ func (svr *Server) init(pub_port string) {
 	svr.queue.Init()
 	// init witness
 	svr.witness = make(map[WitnessEntry]int)
-	svr.witness_lock = sync.Mutex{}
 	svr.publisher = createPublisherSocket(pub_port)
 	svr.subscriber = createSubscriberSocket()
 	go svr.subscribe()
