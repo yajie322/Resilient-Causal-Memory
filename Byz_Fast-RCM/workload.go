@@ -59,6 +59,8 @@ func (clt *Client) workload(num int){
 	// insert value into table before start testing
 	clt.initWrite(10)
 
+
+	start := time.Now()
 	for i := 0; i < num; i++ {
 		temp := rand.Float64()
 		if temp < READ_PORTION {
@@ -75,10 +77,13 @@ func (clt *Client) workload(num int){
 			num_write += 1
 		}
 	}
+	end := time.Now()
+	totalTime := end.Sub(start)
 
 	sort.Ints(write_times)
 	sort.Ints(read_times)
 
+	fmt.Printf("Thorough put: %f op/sec\n", float64(num_read + num_write) / float64(totalTime.Seconds()))
 	fmt.Printf("Avg write time: %f us\n", float64(WTotal)/float64(num_write))
 	fmt.Printf("Avg read time: %f us\n", float64(RTotal)/float64(num_read))
 	fmt.Printf("95-th percentile for write time: %d us\n", write_times[int(float64(num_write) * 0.95)])

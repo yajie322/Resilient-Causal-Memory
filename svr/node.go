@@ -1,119 +1,118 @@
 package main
 
 import (
-	// "container/heap"
 	// "time"
+	"container/heap"
+	"time"
+	zmq "github.com/pebbe/zmq4"
 )
 
-type Node struct {
-	m_data    map[int]string
-	vec_clock []int
-	// outQueue  PriorityQueue
-	// inQueue   PriorityQueue
+type Server struct {
+	mData    map[int]string
+	vecClock []int
+	inQueue   PriorityQueue
 	outQueue  chan Message
-	inQueue   chan Message
+	publisher *zmq.Socket
+	subscriber *zmq.Socket
 }
 
 // initialize the node
-func (n *Node) init(group_size int) {
+func (svr *Server) init(group_size int) {
 	// init data as key(int)-value(string) pair
-	n.m_data = make(map[int]string)
+	svr.mData = make(map[int]string)
 	// init vector timestamp with length group_size
-	n.vec_clock = make([]int, group_size)
+	svr.vecClock = make([]int, group_size)
 	// set vector timestamp to zero
 	for i := 0; i < group_size; i++ {
-		n.vec_clock[i] = 0
+		svr.vecClock[i] = 0
 	}
-	// // init priority queue outQueue
-	// n.outQueue = make(PriorityQueue, 0)
-	// heap.Init(&n.outQueue)
-	// // init priority queue inQueue
-	// n.inQueue = make(PriorityQueue, 0)
-	// heap.Init(&n.inQueue)
-	n.outQueue = make(chan Message, 10000)
-	n.inQueue = make(chan Message, 10000)
+	// init queue outQueue
+	svr.outQueue = make(chan Message, 10000)
+	// init priority queue inQueue
+	svr.inQueue = make(PriorityQueue, 0)
+	heap.Init(&svr.inQueue)
+	// init sockets
+	svr.publisher = createPublisherSocket(svr_list[node_id])
+	svr.subscriber = createSubscriberSocket()
+	go svr.recv()
 }
 
 // perform read(key int), return value string
-func (n *Node) read(key int) string {
+func (svr *Server) read(key int) string {
 	mutex.Lock()
-	res := n.m_data[key]
+	res := svr.mData[key]
 	mutex.Unlock()
 	return res
 }
 
 // perform write(id int, key int, value string)
-func (n *Node) write(key int, value string) {
+func (svr *Server) write(key int, value string) {
 	// update vector clock
-	n.vec_clock[id] += 1
+	svr.vecClock[node_id] += 1
 	// update key-value pair
 	mutex.Lock()
-	n.m_data[key] = value
+	svr.mData[key] = value
 	mutex.Unlock()
 	// create Message object and push to outQueue
-	msg := Message{Type: SERVER, Id: id, Key: key, Val: value, Vec: n.vec_clock}
-	// heap.Push(&n.outQueue, &msg)
-	n.outQueue <- msg
+	msg := Message{Type: ACK, Id: node_id, Key: key, Val: value, Vec: svr.vecClock}
+	// heap.Push(&svr.outQueue, &msg)
+	svr.outQueue <- msg
 }
 
-// apply action
-func (n *Node) apply() {
-	for status {
-		// while inqueue is not empty, compare it and update
-		// for n.inQueue.Len() > 0 {
-		// pop
-		// msg := *heap.Pop(&n.inQueue).(*Message)
-		select {
-		case msg := <- n.inQueue:
-			if n.compareTo(msg.Id, msg.Vec) {
-				// update local vector clock
-				n.vec_clock[msg.Id] = msg.Vec[msg.Id]
-				// update memory
-				mutex.Lock()
-				n.m_data[msg.Key] = msg.Val
-				mutex.Unlock()
-			} else {
-				// heap.Push(&n.inQueue, &msg)
-				n.inQueue <- msg
-			}
-		}
-		// }
-		// wait for inqueue to be non-empty
-		// time.Sleep(10 * time.Millisecond)
+func (svr *Server) recv() {
+	for status{
+		//	get bytes
+		b,_ := svr.subscriber.RecvMessageBytes(0)
+		msg := getMsgFromGob(b[0])
+		heap.Push(&svr.inQueue, &msg)
 	}
 }
 
 // send action
-func (n *Node) send() {
+func (svr *Server) send() {
 	for status {
 		// while out queue is not empty, pop out msg and broadcast it
-		// for n.outQueue.Len() > 0 {
-		// pop
-		// msg := heap.Pop(&n.outQueue).(*Message)
 		select {
-		case msg := <- n.outQueue:
+		case msg := <- svr.outQueue:
 			// broadcast
-			broadcast(&msg)
+			svr.publish(&msg)
 		}
-		// }
-		// wait for outqueue to be non-empty
-		// time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// apply action
+func (svr *Server) apply() {
+	for status {
+		// while inqueue is not empty, compare it and update
+		for svr.inQueue.Len() > 0 {
+			// peek
+			msg := svr.inQueue.Peek()
+			if svr.compareTo(msg.Id, msg.Vec) {
+				// pop
+				msg = heap.Pop(&svr.inQueue).(*Message)
+				// update local vector clock
+				svr.vecClock[msg.Id] = msg.Vec[msg.Id]
+				// update memory
+				mutex.Lock()
+				svr.mData[msg.Key] = msg.Val
+				mutex.Unlock()
+			}
+		}
+		// wait for inqueue to be non-empty
+		time.Sleep(time.Millisecond)
 	}
 }
 
 // helper function for apply action
-func (n *Node) compareTo(id int, vec []int) bool {
-	flag := true
+func (svr *Server) compareTo(id int, vec []int) bool {
 	for i := 0; i < len(vec); i++ {
-		// new_vec[k] leq local_vec[k] for k neq id
-		if i != id && vec[i] > n.vec_clock[i] {
-			flag = false
-			break
+		if i != id && vec[i] > svr.vecClock[i] {
+			// new_vec[k] leq local_vec[k] for k neq id
+			return false
+		} else if i == id && vec[i] != svr.vecClock[i]+1 {
 			// new_vec[id] = local_vec[id] + 1
-		} else if i == id && vec[i] != n.vec_clock[i]+1 {
-			flag = false
-			break
+			return false
 		}
 	}
-	return flag
+	return true
 }

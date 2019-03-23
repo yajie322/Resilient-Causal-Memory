@@ -34,6 +34,20 @@ func getMsgFromGob(msgBytes []byte) Message {
 	dec := gob.NewDecoder(&buff)
 	if err := dec.Decode(&msg); err != nil {
 		fmt.Println(err)
+		msg.Type = ERROR
 	}
 	return msg
+}
+
+func (svr *Server)createRep(msg Message) *Message {
+	var out Message
+	switch msg.Type{
+	case READ:
+		res := svr.read(msg.Key)
+		out = Message{Type: DATA, Id: node_id, Key: msg.Key, Val: res, Vec: make([]int, 1)}
+	case WRITE:
+		svr.write(msg.Key,msg.Val)
+		out = Message{Type: ACK, Id: node_id, Key: msg.Key, Val: "", Vec: make([]int, 1)}
+	}
+	return &out
 }

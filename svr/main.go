@@ -3,17 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	zmq "github.com/pebbe/zmq4"
 	"sync"
 	"os"
 	"flag"
 	"strconv"
 	"strings"
 )
-
-const SERVER = 0
-const CLIENT_WRITE = 1
-const CLIENT_READ = 2
-const QUIT = 3
 
 var (
 	node_id int
@@ -22,8 +18,8 @@ var (
 	clt_list = make(map[int]string)
 	status   bool
 	node_type string
-	write_chan = make(chan bool)
-	read_chan = make(chan string)
+
+
 )
 
 func main() {
@@ -63,21 +59,14 @@ func main() {
 		// // up and running
 		// status = true
 
-		var n Node
+		var svr Server
 
 		// start running
-		n.init(len(svr_list))
-
-		done := make(chan bool)
-
-		go n.recv(done)
-		go n.send()
-		go n.apply()
-
-		<-done
-
+		svr.init(len(svr_list))
+		go svr.send()
+		go svr.apply()
+		svr.server(svr_list[node_id])
 	} else {
-		go listener()
 		// userInput()
 		workload(10000)
 	}

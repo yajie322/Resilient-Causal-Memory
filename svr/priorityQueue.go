@@ -5,6 +5,7 @@ package main
 // 	"container/heap"
 // )
 
+
 type PriorityQueue []*Message
 
 func (pq PriorityQueue) Len() int{
@@ -12,31 +13,17 @@ func (pq PriorityQueue) Len() int{
 }
 
 func (pq PriorityQueue) Less(i,j int) bool {
-	vec_x := pq[i].Vec
-	vec_y := pq[j].Vec
-	flag := true
+	vecX := pq[i].Vec
+	vecY := pq[j].Vec
 	tmp := 0
-	for k:= 0; k < len(vec_x); k++ {
-		if vec_x[k] > vec_y[k]{
-			flag = false
-			break
-		} else if vec_x[k] == vec_y[k]{
+	for k:= 0; k < len(vecX); k++ {
+		if vecX[k] > vecY[k]{
+			return false
+		} else if vecX[k] == vecY[k]{
 			tmp += 1
 		}
 	}
-	if tmp == len(vec_x) {
-		flag = false
-	}
-	return flag
-}
-
-func (pq PriorityQueue) Swap(i,j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-}
-
-func (pq *PriorityQueue) Push(x interface{}) {
-	item := x.(*Message)
-	*pq = append(*pq, item)
+	return tmp != len(vecX)
 }
 
 func (pq *PriorityQueue) Pop() interface{} {
@@ -45,4 +32,17 @@ func (pq *PriorityQueue) Pop() interface{} {
 	item := old[n-1]
 	*pq = old[0 : n-1]
 	return item
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	item := x.(*Message)
+	*pq = append(*pq, item)
+}
+
+func (pq PriorityQueue) Swap(i,j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq PriorityQueue) Peek() *Message {
+	return pq[0]
 }
