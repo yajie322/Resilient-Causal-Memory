@@ -25,7 +25,7 @@ type Server struct {
 	subscriber     *zmq.Socket
 }
 
-func (svr *Server) init(pub_port string) {
+func (svr *Server) init(pubAddr string) {
 	svr.update_needed = make(chan bool, 99999)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int]string)
