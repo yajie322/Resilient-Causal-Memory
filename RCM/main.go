@@ -56,12 +56,8 @@ func main() {
 
 		node.init(server_pub[node_id])
 		go node.serverTask(server_list[node_id])
-
-		//go node.recv()
-		for status {
-			<-node.update_needed
-			go node.update()
-		}
+		done := make(chan bool)
+		<-done
 	case "client":
 		var node Client
 		node.init()

@@ -14,7 +14,6 @@ type WitnessEntry struct {
 }
 
 type Server struct {
-	update_needed  chan bool
 	m_data         map[int]string
 	m_data_lock    sync.RWMutex
 	vec_clock      []int
@@ -28,7 +27,6 @@ type Server struct {
 }
 
 func (svr *Server) init(pub_port string) {
-	svr.update_needed = make(chan bool, 1024)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int]string)
 	svr.m_data_lock = sync.RWMutex{}
@@ -97,9 +95,10 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 	if witness_num == F+1 {
 		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 		svr.publish(&msg)
+		fmt.Printf("Server %d published msg UPDATE\n", node_id)
 		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
 		svr.queue.Enqueue(queue_entry)
-		svr.update_needed <- true
+		go svr.update()
 		// fmt.Println("server enqueues entry: ", queue_entry)
 	}
 }

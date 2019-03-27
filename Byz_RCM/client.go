@@ -69,14 +69,13 @@ func (clt *Client) write(key int, value string) {
 	fmt.Printf("Client %d broadcasted msg WRITE\n", node_id)
 	fmt.Println(time.Now())
 
-	EnoughACK:
-		for i:=0; i < len(server_list); i++{
-			clt.recvACK(dealer)
-			numAck = len(clt.writer_ts[clt.counter])
-			if numAck > F {
-				break EnoughACK
-			}
+	for i:=0; i < len(server_list); i++{
+		clt.recvACK(dealer)
+		numAck = len(clt.writer_ts[clt.counter])
+		if numAck > F {
+			break
 		}
+	}
 	vec_set := clt.writer_ts[clt.counter]
 	// merge all elements of writer_ts[counter] with local vector clock
 	for _, vec := range vec_set {

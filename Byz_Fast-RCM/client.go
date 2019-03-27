@@ -43,14 +43,15 @@ func (clt *Client) read(key int) string {
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg READ\n", node_id)
 
-	for i := 0; i < len(server_list); i++ {
-		clt.recvRESP(dealer)
-		select {
-		case val = <-clt.val_chan:
-			break
-		default:
+	EnoughRESP:
+		for i := 0; i < len(server_list); i++ {
+			clt.recvRESP(dealer)
+			select {
+			case val = <-clt.val_chan:
+				break EnoughRESP
+			default:
+			}
 		}
-	}
 	clt.counter += 1
 	return val
 }
@@ -79,7 +80,7 @@ func (clt *Client) write(key int, value string) {
 func (clt *Client) recvRESP(dealer *zmq.Socket) {
 	msgBytes, err := dealer.RecvBytes(0)
 	if err != nil {
-		fmt.Println("Error occurred when client receiving ACK, err msg: ", err)
+		fmt.Println("Error occurred when client receiving RESP, err msg: ", err)
 		fmt.Println(dealer.String())
 	}
 	msg := getMsgFromGob(msgBytes)

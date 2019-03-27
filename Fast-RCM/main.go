@@ -32,7 +32,7 @@ func main() {
     flag.IntVar(&node_id, "id", 0, "specify the node id")
     flag.Parse()
     // read config file
-    config, err := os.Open("config_mit.txt")
+    config, err := os.Open("config.txt")
     if err != nil {
         fmt.Print(err)
         return
@@ -57,10 +57,8 @@ func main() {
         node.init(server_pub[node_id])
         go node.serverTask(server_list[node_id])
 
-        for status {
-            <-node.update_needed
-            go node.update()
-        }
+        done := make(chan bool)
+        <- done
     case "client":
         var node Client
         node.init()
