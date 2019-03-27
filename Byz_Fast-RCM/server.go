@@ -59,7 +59,7 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) *Message 
 func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) *Message {
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
 	svr.publish(&msg)
-	// fmt.Printf("Server %d published msg UPDATE\n", node_id)
+	fmt.Printf("Server %d published msg UPDATE\n", node_id)
 
 	msg = Message{Kind: ACK, Counter: counter, Vec: svr.vec_clock}
 	return &msg

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	zmq "github.com/pebbe/zmq4"
+	"time"
 )
 
 type ReadBufEntry struct {
@@ -42,6 +43,7 @@ func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg READ\n", node_id)
+	fmt.Println(time.Now())
 
 	EnoughRESP: 
 		for i:=0; i < len(server_list); i++ {
@@ -65,6 +67,7 @@ func (clt *Client) write(key int, value string) {
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg WRITE\n", node_id)
+	fmt.Println(time.Now())
 
 	EnoughACK:
 		for i:=0; i < len(server_list); i++{
@@ -100,7 +103,7 @@ func (clt *Client) recvRESP(dealer *zmq.Socket) {
 		} else {
 			clt.readBuf[entry] = 1
 		}
-		
+
 		clt.merge_clock(msg.Vec)
 
 		if clt.readBuf[entry] == F+1 {
@@ -124,7 +127,7 @@ func (clt *Client) recvACK(dealer *zmq.Socket) {
 		if _, isIn := clt.writer_ts[msg.Counter]; !isIn {
 			clt.writer_ts[msg.Counter] = make(map[int][]int)
 		}
-		fmt.Println("ACK message received vec", msg.Vec)
+		fmt.Println("ACK message received vec", msg.Vec, time.Now())
 		clt.writer_ts[msg.Counter][len(clt.writer_ts[msg.Counter])] = msg.Vec
 	}
 }

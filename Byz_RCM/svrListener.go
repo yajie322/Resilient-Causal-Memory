@@ -4,6 +4,7 @@ import (
 	"fmt"
 	zmq "github.com/pebbe/zmq4"
 	"log"
+	"time"
 )
 
 func (svr *Server) serverTask(svrAddr string) {
@@ -48,11 +49,11 @@ func (svr *Server) serverWorker() {
 			continue
 		}
 		msgReply[0] = msg[0]
-		fmt.Println(message)
+		fmt.Println(message, time.Now())
 
 		// create response message
 		tmpMsg := svr.createRep(message)
-		fmt.Println(tmpMsg)
+		fmt.Println(tmpMsg, time.Now())
 		// encode message
 		tmpGob := getGobFromMsg(tmpMsg)
 		msgReply[1] = tmpGob
@@ -86,6 +87,7 @@ func (svr *Server) subscribe(){
 		if msg.Kind != UPDATE{
 			continue
 		}
+		fmt.Println(msg, time.Now())
 		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
 	}
 }
