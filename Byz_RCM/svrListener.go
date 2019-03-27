@@ -48,6 +48,7 @@ func (svr *Server) serverWorker() {
 			continue
 		}
 		msgReply[0] = msg[0]
+		fmt.Println(message)
 
 		// create response message
 		tmpMsg := svr.createRep(message)

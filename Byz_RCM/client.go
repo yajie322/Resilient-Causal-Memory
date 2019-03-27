@@ -43,14 +43,15 @@ func (clt *Client) read(key int) string {
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg READ\n", node_id)
 
-	for i:=0; i < len(server_list); i++ {
-		clt.recvRESP(dealer)
-		select {
-		case val = <-clt.val_chan:
-			break
-		default:
+	EnoughRESP: 
+		for i:=0; i < len(server_list); i++ {
+			clt.recvRESP(dealer)
+			select {
+			case val = <-clt.val_chan:
+				break EnoughRESP
+			default:
+			}
 		}
-	}
 
 	clt.counter += 1
 	return val
@@ -65,13 +66,14 @@ func (clt *Client) write(key int, value string) {
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg WRITE\n", node_id)
 
-	for i:=0; i < len(server_list); i++{
-		clt.recvACK(dealer)
-		numAck = len(clt.writer_ts[clt.counter])
-		if numAck > F {
-			break
+	EnoughACK:
+		for i:=0; i < len(server_list); i++{
+			clt.recvACK(dealer)
+			numAck = len(clt.writer_ts[clt.counter])
+			if numAck > F {
+				break EnoughACK
+			}
 		}
-	}
 	vec_set := clt.writer_ts[clt.counter]
 	// merge all elements of writer_ts[counter] with local vector clock
 	for _, vec := range vec_set {
@@ -88,8 +90,8 @@ func (clt *Client) recvRESP(dealer *zmq.Socket) {
 		fmt.Println(dealer.String())
 	}
 	msg := getMsgFromGob(msgBytes)
-	fmt.Println(msg)
-	if msg.Kind != RESP {
+
+	if msg.Kind != RESP || msg.Counter != clt.counter {
 		clt.recvRESP(dealer)
 	} else {
 		entry := ReadBufEntry{counter: msg.Counter, val: msg.Val}
@@ -98,7 +100,7 @@ func (clt *Client) recvRESP(dealer *zmq.Socket) {
 		} else {
 			clt.readBuf[entry] = 1
 		}
-
+		
 		clt.merge_clock(msg.Vec)
 
 		if clt.readBuf[entry] == F+1 {
@@ -116,7 +118,7 @@ func (clt *Client) recvACK(dealer *zmq.Socket) {
 		fmt.Println(dealer.String())
 	}
 	msg := getMsgFromGob(msgBytes)
-	if msg.Kind != ACK {
+	if msg.Kind != ACK || msg.Counter != clt.counter {
 		clt.recvACK(dealer)
 	} else {
 		if _, isIn := clt.writer_ts[msg.Counter]; !isIn {

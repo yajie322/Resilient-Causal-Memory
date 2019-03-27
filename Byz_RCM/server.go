@@ -28,7 +28,7 @@ type Server struct {
 }
 
 func (svr *Server) init(pub_port string) {
-	svr.update_needed = make(chan bool, 100)
+	svr.update_needed = make(chan bool, 1024)
 	// init data as key(int)-value(string) pair
 	svr.m_data = make(map[int]string)
 	svr.m_data_lock = sync.RWMutex{}

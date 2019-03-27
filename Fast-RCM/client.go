@@ -84,7 +84,7 @@ func (clt *Client) recvRESP(dealer *zmq.Socket){
 		fmt.Println("client.go line 84, dealer RecvBytes: {}", err)
 	}
 	msg := getMsgFromGob(msgBytes)
-	if msg.Kind != RESP {
+	if msg.Kind != RESP || msg.Counter != clt.counter {
 		clt.recvRESP(dealer)
 	} else{
 		clt.readBuf[msg.Counter] = ReadBufEntry{val: msg.Val, vec_clock: msg.Vec}
@@ -99,7 +99,7 @@ func (clt *Client) recvACK(dealer *zmq.Socket) {
 		fmt.Println("client.go line 99, dealer RecvBytes: {}", err)
 	}
 	msg := getMsgFromGob(msgBytes)
-	if msg.Kind != ACK {
+	if msg.Kind != ACK || msg.Counter != clt.counter {
 		clt.recvACK(dealer)
 	} else{
 		clt.writeBuf[msg.Counter] = msg.Vec
