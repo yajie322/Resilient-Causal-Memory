@@ -1,17 +1,13 @@
 package main
 
 func set(tv TagVal) Message{
-	flag := DEC
-	tagVal := TagVal{Tag: Tag{Id: "", Ts: 0}, Key: 0, Val: ""}
-
 	if local,isIn := mData[tv.Key]; !isIn || local.Tag.smaller(tv.Tag) {
-		flag = SET
 		mutex.Lock()
 		mData[tv.Key] = tv
 		mutex.Unlock()
 	}
 
-	return Message{OpType: flag, Tv:tagVal}
+	return Message{OpType: SET, Tv: TagVal{Tag: Tag{Id: "", Ts: 0}, Key: 0, Val: ""}}
 }
 
 func get(tv TagVal) Message{
