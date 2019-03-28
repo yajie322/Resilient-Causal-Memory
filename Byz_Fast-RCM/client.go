@@ -64,14 +64,14 @@ func (clt *Client) write(key int, value string) {
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg WRITE\n", node_id)
 
-	var vec []int
 	for i := 0; i < len(server_list); i++{
 		clt.recvACK(dealer)
 		if _,isIn := clt.writeBuf[clt.counter]; isIn {
 			break
 		}
 	}
-	clt.merge_clock(vec)
+
+	clt.merge_clock(clt.writeBuf[clt.counter])
 	clt.localBuf[key] = value
 	clt.counter += 1
 	// return WRITE-ACK
