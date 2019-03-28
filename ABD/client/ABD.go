@@ -20,7 +20,7 @@ func get(key int) TagVal {
 	defer dealer.Close()
 
 	// init tagval
-	tv := TagVal{Tag: Tag{Id: "", Ts: 0}, Key: key, Val: ""}
+	tv := TagVal{Tag: Tag{Id: "", Ts: -1}, Key: key, Val: ""}
 	msg := Message{OpType: GET, Tv: tv}
 	sendToServer(msg, dealer)
 	

@@ -1,24 +1,24 @@
 package main
 
 func set(tv TagVal) Message{
-	var res Message
-
-	state := mData[tv.Key].Tag
-	if state.smaller(tv.Tag){
-		mutex.Lock()
-		mData[tv.Key] = tv
-		mutex.Unlock()
-		res.OpType = SET
-		res.Tv = TagVal{Tag: state, Key: 0, Val: ""}
-	} else {
-		res = Message{OpType: DEC, 	Tv:	TagVal{Tag: state, Key: 0, Val: ""}}
+	if local,isIn := mData[tv.Key]; isIn {
+		if local.Tag.smaller(tv.Tag) {
+			mutex.Lock()
+			mData[tv.Key] = tv
+			mutex.Unlock()
+			return Message{OpType: SET,Tv:TagVal{Tag: local.Tag, Key: 0, Val: ""}}
+		}
 	}
-	return res
+	return Message{OpType: DEC, Tv:	TagVal{Tag: Tag{Id:"",Ts:0}, Key: 0, Val: ""}}
 }
 
 func get(tv TagVal) Message{
 	var res Message
 	res.OpType = GET
-	res.Tv = mData[tv.Key]
+	if tv,isIn := mData[tv.Key]; isIn{
+		res.Tv = tv
+	} else {
+		res.Tv = TagVal{Tag: Tag{Id: "", Ts: 0}, Key: tv.Key, Val: ""}
+	}
 	return res
 }

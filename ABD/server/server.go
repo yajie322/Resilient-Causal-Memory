@@ -41,6 +41,7 @@ func serverWorker() {
 		}
 		// decode message
 		message := getMsgFromGob(msg[1])
+		fmt.Println(message.OpType,message.Tv.Tag,message.Tv.Key)
 		msgReply[0] = msg[0]
 
 		// create response message
