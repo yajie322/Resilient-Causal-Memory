@@ -46,6 +46,7 @@ func serverWorker() {
 
 		// create response message
 		tmpMsg := createRep(message)
+		fmt.Println(tmpMsg.OpType,tmpMsg.Tv.Tag,tmpMsg.Tv.Key)
 		if tmpMsg.OpType != DEC{
 			// encode message
 			tmpGob := getGobFromMsg(tmpMsg)

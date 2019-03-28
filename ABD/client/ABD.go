@@ -1,4 +1,6 @@
-package main 
+package main
+
+import "fmt"
 
 // abd write
 func write(key int, val string){
@@ -31,7 +33,8 @@ func get(key int) TagVal {
 			tv = tmp
 		}
 	}
-	return tv	
+	fmt.Println("recv tv",tv.Tag,tv.Key)
+	return tv
 }
 
 // set phase
@@ -39,6 +42,7 @@ func set(tv TagVal){
 	dealer := createDealerSocket()
 	defer dealer.Close()
 
+	fmt.Println("set tag", tv.Tag, "key",tv.Key)
 	msg := Message{OpType: SET, Tv: tv}
 	sendToServer(msg, dealer)
 	// recv ack from quorum
