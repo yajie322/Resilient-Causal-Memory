@@ -4,20 +4,23 @@ import "fmt"
 
 // abd write
 func write(key int, val string){
-	tv := get(key)
+	tv,_ := get(key)
 	tv.update(val)
 	set(tv)
 }
 
 // abd read
 func read(key int) string{
-	tv := get(key)
-	set(tv)
+	var tv TagVal
+	if tv,needUpd := get(key); needUpd{
+		set(tv)
+	}
 	return tv.Val
 }
 
 // get phase
-func get(key int) TagVal {
+func get(key int) (TagVal,bool) {
+	var diffCount = -1
 	dealer := createDealerSocket()
 	defer dealer.Close()
 
@@ -31,10 +34,11 @@ func get(key int) TagVal {
 		tmp := recvData(dealer)
 		if tv.Tag.smaller(tmp.Tag) {
 			tv = tmp
+			diffCount++
 		}
 	}
 	fmt.Println("recv tv",tv.Tag,tv.Key)
-	return tv
+	return tv, diffCount > 0
 }
 
 // set phase

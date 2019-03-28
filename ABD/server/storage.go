@@ -17,8 +17,8 @@ func set(tv TagVal) Message{
 func get(tv TagVal) Message{
 	var res Message
 	res.OpType = GET
-	if tv,isIn := mData[tv.Key]; isIn{
-		res.Tv = tv
+	if local,isIn := mData[tv.Key]; isIn{
+		res.Tv = local
 	} else {
 		res.Tv = TagVal{Tag: Tag{Id: "", Ts: 0}, Key: tv.Key, Val: ""}
 	}

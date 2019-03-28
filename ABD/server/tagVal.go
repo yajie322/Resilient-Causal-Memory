@@ -19,7 +19,7 @@ func (t *Tag) smaller(x Tag) bool {
 	} else if t.Ts > x.Ts {
 		res = false
 	} else {
-		res = t.Id < x.Id
+		res = t.Id <= x.Id
 	}
 	return res
 }
