@@ -43,7 +43,6 @@ func (clt *Client) read(key int) string {
 	msg := Message{Kind: READ, Key: key, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg READ\n", node_id)
-	fmt.Println(time.Now())
 
 	EnoughRESP: 
 		for i:=0; i < len(server_list); i++ {

@@ -49,11 +49,9 @@ func (svr *Server) serverWorker() {
 			continue
 		}
 		msgReply[0] = msg[0]
-		fmt.Println(message, time.Now())
 
 		// create response message
 		tmpMsg := svr.createRep(message)
-		fmt.Println(tmpMsg, time.Now())
 		// encode message
 		tmpGob := getGobFromMsg(tmpMsg)
 		msgReply[1] = tmpGob
