@@ -14,6 +14,7 @@ var (
 // used to mark the phase
 const GET = 0
 const SET = 1
+const DEC = 2
 
 func main(){
 	// init storage IP

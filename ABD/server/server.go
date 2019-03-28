@@ -45,9 +45,9 @@ func serverWorker() {
 
 		// create response message
 		tmpMsg := createRep(message)
-		if tmpMsg != nil{
+		if tmpMsg.OpType != DEC{
 			// encode message
-			tmpGob := getGobFromMsg(*tmpMsg)
+			tmpGob := getGobFromMsg(tmpMsg)
 			msgReply[1] = tmpGob.Bytes()
 			if _,err:= worker.SendMessage(msgReply); err != nil{
 				fmt.Println("Err replying: ", err)
@@ -57,8 +57,8 @@ func serverWorker() {
 }
 
 // create response message
-func createRep(input Message) *Message {
-	var output *Message
+func createRep(input Message) Message {
+	var output Message
 	switch input.OpType{
 	// if set phase
 	case SET:

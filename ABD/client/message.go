@@ -30,7 +30,7 @@ func getMsgFromGob(msgBytes []byte) Message {
 	buff.Write(msgBytes)
 	dec := gob.NewDecoder(&buff)
 	if err := dec.Decode(&msg); err != nil {
-		msg = Message{OpType: GET, Tv:TagVal{Tag:Tag{Id:"0",Ts:0}, Key:0, Val:""}}
+		msg = Message{OpType: ERR, Tv:TagVal{Tag:Tag{Id:"0",Ts:0}, Key:0, Val:""}}
 	}
 	return msg
 }

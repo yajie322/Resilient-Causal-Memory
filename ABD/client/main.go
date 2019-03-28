@@ -21,10 +21,11 @@ var (
 const GET = 0
 const SET = 1
 const DATASIZE = 1024
+const ERR = 2
 
 func main() {
 	// init client id
-	flag.StringVar(&addr, "clientIP", "128.52.179.161", "input client IP")
+	flag.StringVar(&addr, "clientIP", "128.52.179.161:8888", "input client IP")
 	flag.Parse()
 
 	// read config file
