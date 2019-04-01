@@ -84,6 +84,6 @@ func (svr *Server) subscribe(){
 		if msg.Kind != UPDATE{
 			continue
 		}
-		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec, msg.Sender)
 	}
 }
