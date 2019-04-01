@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	zmq "github.com/pebbe/zmq4"
-	"time"
 )
 
 type ReadBufEntry struct {
@@ -66,7 +65,6 @@ func (clt *Client) write(key int, value string) {
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg, dealer)
 	fmt.Printf("Client %d broadcasted msg WRITE\n", node_id)
-	fmt.Println(time.Now())
 
 	for i:=0; i < len(server_list); i++{
 		clt.recvACK(dealer)
@@ -125,7 +123,7 @@ func (clt *Client) recvACK(dealer *zmq.Socket) {
 		if _, isIn := clt.writer_ts[msg.Counter]; !isIn {
 			clt.writer_ts[msg.Counter] = make(map[int][]int)
 		}
-		fmt.Println("ACK message received vec", msg.Vec, time.Now())
+		fmt.Println("ACK message received vec", msg.Vec)
 		clt.writer_ts[msg.Counter][len(clt.writer_ts[msg.Counter])] = msg.Vec
 	}
 }

@@ -107,7 +107,7 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 				svr.queue.Enqueue(queue_entry)
 				go svr.update()
 				// fmt.Println("server enqueues entry: ", queue_entry)
-			}	
+			}
 		}
 	} else {
 		svr.witness[entry] = make(map[int]bool)
@@ -128,8 +128,8 @@ func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []
 			svr.queue.Enqueue(queue_entry)
 			go svr.update()
 			// fmt.Println("server enqueues entry: ", queue_entry)
-		}	
-	}	
+		}
+	}
 }
 
 // infinitely often update the local storage

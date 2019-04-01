@@ -65,7 +65,8 @@ func (clt *Client) write(key int, value string) {
 	defer dealer.Close()
 	msg := Message{Kind: WRITE, Key: key, Val: value, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
 	zmqBroadcast(&msg,dealer)
-
+	fmt.Printf("Client %d broadcasted msg WRITE\n", node_id)
+	
 	for i := 0; i < len(server_list); i++{
 		clt.recvACK(dealer)
 		if _,isIn := clt.writeBuf[clt.counter]; isIn{

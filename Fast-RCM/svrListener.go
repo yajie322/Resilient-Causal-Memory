@@ -67,10 +67,10 @@ func (svr *Server) createRep(input Message) *Message {
 	var output *Message
 	switch input.Kind {
 	case READ:
-		// fmt.Println("server receives READ message with vec_clock", msg.Vec)
+		// fmt.Println("server receives READ message with vec_clock", input.Vec)
 		output = svr.recvRead(input.Key, input.Id, input.Counter, input.Vec)
 	case WRITE:
-		// fmt.Println("server receives WRITE message with vec_clock", msg.Vec)
+		// fmt.Println("server receives WRITE message with vec_clock", input.Vec)
 		output = svr.recvWrite(input.Key, input.Val, input.Id, input.Counter, input.Vec)
 	}
 	return output
@@ -84,6 +84,6 @@ func (svr *Server) subscribe(){
 		if msg.Kind != UPDATE{
 			continue
 		}
-		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec, msg.Sender)
 	}
 }

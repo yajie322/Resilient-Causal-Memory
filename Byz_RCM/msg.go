@@ -13,6 +13,7 @@ type Message struct {
 	Val			string
 	Vec			[]int
 	Counter		int
+	Sender		int
 }
 
 // encode msg

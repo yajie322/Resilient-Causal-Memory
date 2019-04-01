@@ -4,7 +4,6 @@ import (
 	"fmt"
 	zmq "github.com/pebbe/zmq4"
 	"log"
-	"time"
 )
 
 func (svr *Server) serverTask(svrAddr string) {
@@ -85,7 +84,6 @@ func (svr *Server) subscribe(){
 		if msg.Kind != UPDATE{
 			continue
 		}
-		fmt.Println(msg, time.Now())
-		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec)
+		svr.recvUpdate(msg.Key, msg.Val, msg.Id, msg.Counter, msg.Vec, msg.Sender)
 	}
 }
