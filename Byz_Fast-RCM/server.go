@@ -20,7 +20,9 @@ type Server struct {
 	vec_clock_lock	sync.RWMutex
 	vec_clock_cond	*sync.Cond
 	queue			Queue
-	witness 		map[WitnessEntry]int
+	witness 		map[WitnessEntry]map[int]bool
+	has_sent		map[WitnessEntry]bool
+	has_sent_lock 	sync.Mutex
 	publisher_lock sync.Mutex
 	publisher      *zmq.Socket
 	subscriber     *zmq.Socket
@@ -41,7 +43,9 @@ func (svr *Server) init(pub_port string) {
 	// init queue
 	svr.queue.Init()
 	// init witness
-	svr.witness = make(map[WitnessEntry] int)
+	svr.witness = make(map[WitnessEntry]map[int]bool)
+	svr.has_sent = make(map[WitnessEntry]bool)
+	svr.has_sent_lock = sync.Mutex{}
 	svr.publisher = createPublisherSocket(pub_port)
 	svr.subscriber = createSubscriberSocket()
 	go svr.subscribe()
@@ -55,31 +59,64 @@ func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) *Message 
 }
 
 func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) *Message {
-	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-	svr.publish(&msg)
-	fmt.Printf("Server %d published msg UPDATE\n", node_id)
+	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
+	entry := WitnessEntry{id: id, counter: counter}
+	svr.has_sent_lock.Lock()
+	if _,isIn := svr.has_sent[entry]; !isIn {
+		svr.publish(&msg)
+		svr.has_sent[entry] = true
+		fmt.Printf("Server %d published msg UPDATE in response to WRITE from client %d\n", node_id, id)
+	}
+	svr.has_sent_lock.Unlock()
 
 	msg = Message{Kind: ACK, Counter: counter, Vec: svr.vec_clock}
 	return &msg
 }
 
 // Actions to take if server receives UPDATE message
-func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int) {
-	entry := WitnessEntry{key: key, val: val, id: id, counter: counter}
-	if _, isIn := svr.witness[entry]; isIn {
-		svr.witness[entry] += 1
-	} else {
-		svr.witness[entry] = 1
-	}
-	witness_num := svr.witness[entry]
+func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int, sender_id int) {
+	entry := WitnessEntry{id: id, counter: counter}
+	if _,isIn := svr.witness[entry]; isIn {
+		if _,hasReceived := svr.witness[entry][sender_id]; !hasReceived {
+			svr.witness[entry][sender_id] = true
 
-	if witness_num == F+1 {
-		msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i}
-		svr.publish(&msg)
-		queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
-		svr.queue.Enqueue(queue_entry)
-		go svr.update()
-		// fmt.Println("server enqueues entry: ", queue_entry)
+			// Publish UPDATE
+			svr.has_sent_lock.Lock()
+			if _,isIn := svr.has_sent[entry]; !isIn {
+				msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
+				svr.publish(&msg)
+				svr.has_sent[entry] = true
+				fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
+			}
+			svr.has_sent_lock.Unlock()
+
+			if len(svr.witness[entry]) == F+1 {
+				queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
+				svr.queue.Enqueue(queue_entry)
+				go svr.update()
+				// fmt.Println("server enqueues entry: ", queue_entry)
+			}
+		}
+	} else {
+		svr.witness[entry] = make(map[int]bool)
+		svr.witness[entry][sender_id] = true
+
+		// Publish UPDATE
+		svr.has_sent_lock.Lock()
+		if _,isIn := svr.has_sent[entry]; !isIn {
+			msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
+			svr.publish(&msg)
+			svr.has_sent[entry] = true
+			fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
+		}
+		svr.has_sent_lock.Unlock()
+
+		if len(svr.witness[entry]) == F+1 {
+			queue_entry := QueueEntry{Key: key, Val: val, Id: id, Vec: vec_i}
+			svr.queue.Enqueue(queue_entry)
+			go svr.update()
+			// fmt.Println("server enqueues entry: ", queue_entry)
+		}
 	}
 }
 

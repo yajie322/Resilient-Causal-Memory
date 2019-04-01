@@ -64,13 +64,13 @@ func (clt *Client) workload(num int){
 	for i := 0; i < num; i++ {
 		temp := rand.Float64()
 		if temp < READ_PORTION {
-			fmt.Println("reading...")
+			// fmt.Println("reading...")
 			millisec := int(clt.read_load(i%10).Nanoseconds()/1000)
 			RTotal += millisec
 			read_times = append(read_times, millisec)
 			num_read += 1
 		} else {
-			fmt.Println("writing...")
+			// fmt.Println("writing...")
 			millisec := int(clt.write_load(i%10, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE)).Nanoseconds()/1000)
 			WTotal += millisec
 			write_times = append(write_times, millisec)
