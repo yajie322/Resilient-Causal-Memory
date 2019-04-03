@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 	zmq "github.com/pebbe/zmq4"
+	"log"
 )
 
 func server_task() {

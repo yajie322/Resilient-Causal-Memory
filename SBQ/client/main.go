@@ -7,12 +7,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 var (
 	addr  string
-	mutex  = &sync.Mutex{}
+	//mutex  = &sync.Mutex{}
 	// IP addresses of servers
 	servers   = make(map[int]string)
 	maxUsedTs = -1

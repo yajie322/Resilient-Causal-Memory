@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"bytes"
-	"encoding/gob"	
+	"encoding/gob"
+	"fmt"
 )
 
 type TagVal struct {
 	Ts	 	int
-	Key 	int
+	Key 	string
 	Val		string
 }
 
@@ -36,7 +36,7 @@ func getMsgFromGob(msgBytes []byte) Message {
 	buff.Write(msgBytes)
 	dec := gob.NewDecoder(&buff)
 	if err := dec.Decode(&msg); err != nil {
-		msg = Message{OpType: ERR, Tv:TagVal{Ts:-1, Key:0, Val:""}}
+		msg = Message{OpType: ERR, Tv:TagVal{Ts:-1, Key:"", Val:""}}
 	}
 	return msg
 }

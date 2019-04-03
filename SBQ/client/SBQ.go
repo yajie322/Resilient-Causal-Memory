@@ -5,14 +5,14 @@ import (
 )
 
 // sbq write
-func write(key int, val string){
+func write(key string, val string){
 	ts := getTs(key)
 	tv := update(key,ts,val)
 	store(tv)
 }
 
 // sbq read
-func read(key int) string{
+func read(key string) string{
 	dealer := createDealerSocket()
 	defer dealer.Close()
 
@@ -43,7 +43,7 @@ func read(key int) string{
 }
 
 // read ts
-func getTs(key int) int{
+func getTs(key string) int{
 	dealer := createDealerSocket()
 	defer dealer.Close()
 
@@ -71,7 +71,7 @@ func store(tv TagVal){
 }
 
 // get new ts
-func update(key int, ts int, val string) TagVal{
+func update(key string, ts int, val string) TagVal{
 	tv := TagVal{Ts:ts,Key:key,Val:val}
 	if maxUsedTs < ts{
 		tv.Ts += 1

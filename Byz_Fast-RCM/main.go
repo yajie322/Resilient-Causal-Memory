@@ -1,12 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"github.com/peterbourgon/diskv"
 	"os"
-	// "time"
-	// "sync"
-	"bufio"
 	"strconv"
 	"strings"
 )
@@ -18,6 +17,10 @@ var (
 	server_list = make(map[int]string)
 	server_pub = make(map[int]string)
 	status   	bool
+	d = diskv.New(diskv.Options{
+		BasePath:     "data",
+		CacheSizeMax: 1024 , // 1KB
+	})
 )
 
 func main() {
@@ -64,38 +67,5 @@ func main() {
 		node.init()
 
 		node.workload(10000)
-	}
-}
-
-func (clt *Client) userInput() {
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Print("->")
-		// handle command line input
-		text, _ := reader.ReadString('\n')
-		text = strings.Replace(text, "\n", "", -1)
-		if strings.HasPrefix(text, "write") {
-			input := strings.SplitN(text, " ", 3)
-
-			key, err := strconv.Atoi(input[1])
-			if err != nil {
-				fmt.Println(err)
-			}
-			// write
-			clt.write(key, input[2])
-		} else if strings.HasPrefix(text, "read") {
-			key, err := strconv.Atoi(strings.SplitN(text, " ", 2)[1])
-			if err != nil {
-				fmt.Println(err)
-			}
-			// output read
-			fmt.Printf("\t%s\n", clt.read(key))
-		} else {
-			// quit
-			// mutex.Lock()
-			status = false
-			// mutex.Unlock()
-			break
-		}
 	}
 }

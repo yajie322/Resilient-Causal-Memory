@@ -7,15 +7,13 @@ import (
 )
 
 type WitnessEntry struct {
-	key 	int
+	key 	string
 	val 	string
 	id      int
 	counter int
 }
 
 type Server struct {
-	m_data         map[int]string
-	m_data_lock    sync.RWMutex
 	vec_clock      []int
 	vec_clock_lock sync.Mutex
 	vec_clock_cond *sync.Cond
@@ -29,10 +27,6 @@ type Server struct {
 }
 
 func (svr *Server) init(pub_port string) {
-	// init data as key(int)-value(string) pair
-	svr.m_data = make(map[int]string)
-	svr.m_data_lock = sync.RWMutex{}
-	// init vector timestamp with length group_size
 	svr.vec_clock = make([]int, NUM_CLIENT)
 	svr.vec_clock_lock = sync.Mutex{}
 	svr.vec_clock_cond = sync.NewCond(&svr.vec_clock_lock)
@@ -52,20 +46,17 @@ func (svr *Server) init(pub_port string) {
 }
 
 // Actions to take if server receives READ message
-func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) *Message {
+func (svr *Server) recvRead(key string, id int, counter int, vec_i []int) *Message {
 	// wait until t_server is greater than t_i
 	svr.waitUntilServerClockGreaterExceptI(vec_i, 999999)
 
 	// send RESP message to client i
-	svr.m_data_lock.RLock()
-	msg := Message{Kind: RESP, Counter: counter, Val: svr.m_data[key], Vec: svr.vec_clock}
-	svr.m_data_lock.RUnlock()
+	msg := Message{Kind: RESP, Counter: counter, Val: d.ReadString(key), Vec: svr.vec_clock}
 	return &msg
-	//send(&msg, mem_list[id])
 }
 
 // Actions to take if server receives WRITE message
-func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) *Message{
+func (svr *Server) recvWrite(key string, val string, id int, counter int, vec_i []int) *Message{
 	// broadcast UPDATE message
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
 	entry := WitnessEntry{id: id, counter: counter}
@@ -83,11 +74,10 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 	// send ACK message to client i
 	msg = Message{Kind: ACK, Counter: counter, Vec: svr.vec_clock}
 	return &msg
-	//send(&msg, mem_list[id])
 }
 
 // Actions to take if server receives UPDATE message
-func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int, sender_id int) {
+func (svr *Server) recvUpdate(key string, val string, id int, counter int, vec_i []int, sender_id int) {
 	entry := WitnessEntry{key: key, val: val, id: id, counter: counter}
 
 	if _, isIn := svr.witness[entry]; isIn {
@@ -153,9 +143,10 @@ func (svr *Server) update() {
 		// fmt.Println("server increments vec_clock: ", svr.vec_clock)
 		svr.vec_clock_cond.Broadcast()
 		svr.vec_clock_cond.L.Unlock()
-		svr.m_data_lock.Lock()
-		svr.m_data[msg.Key] = msg.Val
-		svr.m_data_lock.Unlock()
+
+		if err := d.WriteString(msg.Key,msg.Val); err != nil{
+			fmt.Println(err)
+		}
 	}
 }
 

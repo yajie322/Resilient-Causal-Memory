@@ -5,7 +5,7 @@ import (
 )
 
 type QueueEntry struct {
-	Key		int
+	Key		string
 	Val 	string
 	Id 		int
 	Vec		[]int
@@ -30,7 +30,7 @@ func (q *Queue) Enqueue(entry QueueEntry) {
 
 func (q *Queue) Dequeue() *QueueEntry {
   q.lock.Lock()
-  if (len(q.values) > 0) {
+  if len(q.values) > 0 {
     entry := q.values[0]
     q.values = q.values[1:]
     q.lock.Unlock()

@@ -7,7 +7,7 @@ type Tag struct {
 
 type TagVal struct {
 	Tag 	Tag
-	Key 	int
+	Key 	string
 	Val		string
 }
 

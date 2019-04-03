@@ -1,14 +1,18 @@
-package main 
+package main
 
-import(
-	"sync"
+import (
 	"flag"
+	"github.com/peterbourgon/diskv"
 )
 
 var (
-	mutex  = &sync.Mutex{}
+	//mutex  = &sync.Mutex{}
 	addr  string
-	mData  = make(map[int]TagVal)
+	//mData  = make(map[int]TagVal)
+	d = diskv.New(diskv.Options{
+		BasePath:     "data",
+		CacheSizeMax: 1024 , // 1KB
+	})
 )
 
 // used to mark the phase

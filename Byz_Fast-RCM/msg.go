@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"bytes"
-	"encoding/gob"	
+	"encoding/gob"
+	"fmt"
 )
 
 type Message struct {
 	Kind		int
 	Id			int
-	Key			int
+	Key			string
 	Val			string
 	Vec			[]int
 	Counter		int
@@ -36,7 +36,7 @@ func getMsgFromGob(msgBytes []byte) Message {
 	dec := gob.NewDecoder(&buff)
 	if err := dec.Decode(&msg); err != nil {
 		fmt.Println("Error occurred when decoding messesage in file msg.go", err)
-		return Message{Kind: ERROR, Key: -1, Val: "", Id: -1, Counter: -1, Vec: make([]int,1)}
+		return Message{Kind: ERROR, Key: "", Val: "", Id: -1, Counter: -1, Vec: make([]int,1)}
 	}
 	return msg
 }

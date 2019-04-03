@@ -31,7 +31,7 @@ func (clt *Client) init() {
 	clt.readBuf = make(map[int]ReadBufEntry)
 }
 
-func (clt *Client) read(key int) string {
+func (clt *Client) read(key string) string {
 	dealer := createDealerSocket()
 	defer dealer.Close()
 	msg := Message{Kind: READ, Key: key, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
@@ -51,7 +51,7 @@ func (clt *Client) read(key int) string {
 	return entry.val
 }
 
-func (clt *Client) write(key int, value string) {
+func (clt *Client) write(key string, value string) {
 	var numAck int
 	dealer := createDealerSocket()
 	defer dealer.Close()
