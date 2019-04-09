@@ -21,7 +21,6 @@ var (
 	status   	bool
 	d = diskv.New(diskv.Options{
 		BasePath:     "data",
-		CacheSizeMax: 1024 , // 1KB
 	})
 )
 
