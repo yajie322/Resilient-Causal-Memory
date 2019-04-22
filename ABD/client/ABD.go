@@ -3,14 +3,14 @@ package main
 import "fmt"
 
 // abd write
-func write(key int, val string){
+func write(key string, val string){
 	tv,_ := get(key)
 	tv.update(val)
 	set(tv)
 }
 
 // abd read
-func read(key int) string{
+func read(key string) string{
 	var tv TagVal
 	if tv,needUpd := get(key); needUpd{
 		set(tv)
@@ -19,7 +19,7 @@ func read(key int) string{
 }
 
 // get phase
-func get(key int) (TagVal,bool) {
+func get(key string) (TagVal,bool) {
 	var diffCount = -1
 	dealer := createDealerSocket()
 	defer dealer.Close()

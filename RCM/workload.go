@@ -1,13 +1,12 @@
 package main 
 
 import(
-	"strconv"
 	"fmt"
-	"time"
-	// "sync"
 	"math/rand"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // initialize mutex lock
@@ -19,18 +18,18 @@ const DATA_SIZE = 64
 func (clt *Client) initWrite(num int){
 	// write data in the form (string,blob) into table tmp
 	for i:= 0; i < num; i++{
-		clt.write(i, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE))
+		key := string(i)
+		clt.write(key, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE))
 	}
 }
 
 // write info into table
 func (clt *Client) write_load(num int, val string) time.Duration {
 	// write data in the form (int, string) into table tmp
-	// mutex.Lock()
+	key := string(num)
 	start := time.Now()
-	clt.write(num, val)
+	clt.write(key, val)
 	end := time.Now()
-	// mutex.Unlock()
 	elapsed := end.Sub(start)
 	return elapsed
 }
@@ -38,11 +37,10 @@ func (clt *Client) write_load(num int, val string) time.Duration {
 // read info from table by key
 func (clt *Client) read_load(num int) time.Duration {
 	// write data in the form table tmp with key = num	
-	// mutex.Lock()
+	key := string(num)
 	start := time.Now()
-	clt.read(num)
+	clt.read(key)
 	end := time.Now()
-	// mutex.Unlock()
 	elapsed := end.Sub(start)
 	return elapsed
 }

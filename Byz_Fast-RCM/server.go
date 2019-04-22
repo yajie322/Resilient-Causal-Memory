@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	zmq "github.com/pebbe/zmq4"
+	"sync"
 )
 
 type WitnessEntry struct {
@@ -14,8 +14,6 @@ type WitnessEntry struct {
 }
 
 type Server struct {
-	m_data			map[int]string
-	m_data_lock		sync.RWMutex
 	vec_clock		[]int
 	vec_clock_lock	sync.RWMutex
 	vec_clock_cond	*sync.Cond
@@ -29,9 +27,6 @@ type Server struct {
 }
 
 func (svr *Server) init(pub_port string) {
-	// init data as key(int)-value(string) pair
-	svr.m_data = make(map[int] string)
-	svr.m_data_lock = sync.RWMutex{}
 	// init vector timestamp with length group_size
 	svr.vec_clock = make([]int, NUM_CLIENT)
 	svr.vec_clock_lock = sync.RWMutex{}
@@ -51,14 +46,12 @@ func (svr *Server) init(pub_port string) {
 	go svr.subscribe()
 }
 
-func (svr *Server) recvRead(key int, id int, counter int, vec_i []int) *Message {
-	svr.m_data_lock.RLock()
-	msg := Message{Kind: RESP, Counter: counter, Key: key, Val: svr.m_data[key], Vec: svr.vec_clock}
-	svr.m_data_lock.RUnlock()
+func (svr *Server) recvRead(key string, id int, counter int, vec_i []int) *Message {
+	msg := Message{Kind: RESP, Counter: counter, Key: key, Val: d.ReadString(key), Vec: svr.vec_clock}
 	return &msg
 }
 
-func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []int) *Message {
+func (svr *Server) recvWrite(key string, val string, id int, counter int, vec_i []int) *Message {
 	msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
 	entry := WitnessEntry{id: id, counter: counter}
 	svr.has_sent_lock.Lock()
@@ -74,7 +67,7 @@ func (svr *Server) recvWrite(key int, val string, id int, counter int, vec_i []i
 }
 
 // Actions to take if server receives UPDATE message
-func (svr *Server) recvUpdate(key int, val string, id int, counter int, vec_i []int, sender_id int) {
+func (svr *Server) recvUpdate(key string, val string, id int, counter int, vec_i []int, sender_id int) {
 	entry := WitnessEntry{id: id, counter: counter}
 	if _,isIn := svr.witness[entry]; isIn {
 		if _,hasReceived := svr.witness[entry][sender_id]; !hasReceived {
@@ -138,9 +131,9 @@ func (svr *Server) update(){
 		// fmt.Println("server increments vec_clock: ", svr.vec_clock)
 		svr.vec_clock_cond.Broadcast()
 		svr.vec_clock_cond.L.Unlock()
-		svr.m_data_lock.Lock()
-		svr.m_data[msg.Key] = msg.Val
-		svr.m_data_lock.Unlock()
+		if err := d.WriteString(msg.Key,msg.Val); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 

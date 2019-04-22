@@ -35,7 +35,7 @@ func (clt *Client) init() {
 	clt.val_chan = make(chan string, 1)
 }
 
-func (clt *Client) read(key int) string {
+func (clt *Client) read(key string) string {
 	var val string
 	dealer := createDealerSocket()
 	defer dealer.Close()
@@ -57,7 +57,7 @@ func (clt *Client) read(key int) string {
 	return val
 }
 
-func (clt *Client) write(key int, value string) {
+func (clt *Client) write(key string, value string) {
 	var numAck int
 	dealer := createDealerSocket()
 	defer dealer.Close()

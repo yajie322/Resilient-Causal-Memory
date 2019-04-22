@@ -15,7 +15,7 @@ type Client struct {
 	counter			int
 	readBuf 		map[int]ReadBufEntry
 	writeBuf		map[int][]int
-	localBuf		map[int]string
+	localBuf		map[string]string
 }
 
 func (clt *Client) init() {
@@ -28,10 +28,10 @@ func (clt *Client) init() {
 	// init read buffer as counter(int) - (value, timestamp) tuple (ReadBufEntry) pairs
 	clt.readBuf = make(map[int] ReadBufEntry)
 	clt.writeBuf = make(map[int] []int)
-	clt.localBuf = make(map[int] string)
+	clt.localBuf = make(map[string] string)
 }
 
-func (clt *Client) read(key int) string {
+func (clt *Client) read(key string) string {
 	dealer := createDealerSocket()
 	defer dealer.Close()
 	msg := Message{Kind: READ, Key: key, Id: node_id, Counter: clt.counter, Vec: clt.vec_clock}
@@ -59,7 +59,7 @@ func (clt *Client) read(key int) string {
 	}
 }
 
-func (clt *Client) write(key int, value string) {
+func (clt *Client) write(key string, value string) {
 	clt.vec_clock[node_id] += 1
 	dealer := createDealerSocket()
 	defer dealer.Close()

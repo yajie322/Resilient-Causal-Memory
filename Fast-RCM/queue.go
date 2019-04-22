@@ -5,7 +5,7 @@ import (
 )
 
 type QueueEntry struct {
-	Key		int
+	Key		string
 	Val 	string
 	Id 		int
 	Vec		[]int
