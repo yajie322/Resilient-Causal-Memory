@@ -63,7 +63,7 @@ func main() {
 		node.init()
 		//go node.recv()
 		// node.userInput()
-		node.workload(10000)
+		node.workload(1000)
 	}
 }
 
