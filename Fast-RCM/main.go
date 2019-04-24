@@ -63,7 +63,7 @@ func main() {
         var node Client
         node.init()
         // node.userInput()
-        node.workload(1000)
+        node.workload(10000)
     }
 }
 
