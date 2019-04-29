@@ -65,7 +65,7 @@ func (svr *Server) recvWrite(key string, val string, id int, counter int, vec_i 
 	if _,isIn := svr.has_sent[entry]; !isIn {
 		svr.publish(&msg)
 		svr.has_sent[entry] = true
-		fmt.Printf("Server %d published msg UPDATE in response to WRITE from client %d\n", node_id, id)
+		// fmt.Printf("Server %d published msg UPDATE in response to WRITE from client %d\n", node_id, id)
 	}
 	svr.has_sent_lock.Unlock()
 	
@@ -91,7 +91,7 @@ func (svr *Server) recvUpdate(key string, val string, id int, counter int, vec_i
 				msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
 				svr.publish(&msg)
 				svr.has_sent[entry] = true
-				fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
+				// fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
 			}
 			svr.has_sent_lock.Unlock()
 
@@ -112,7 +112,7 @@ func (svr *Server) recvUpdate(key string, val string, id int, counter int, vec_i
 			msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
 			svr.publish(&msg)
 			svr.has_sent[entry] = true
-			fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
+			// fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
 		}
 		svr.has_sent_lock.Unlock()
 
@@ -129,6 +129,7 @@ func (svr *Server) recvUpdate(key string, val string, id int, counter int, vec_i
 func (svr *Server) update() {
 	msg := svr.queue.Dequeue()
 	if msg != nil {
+		// fmt.Println(msg)
 		// fmt.Println("server receives msg with vec_clock: ", msg.Vec)
 		// fmt.Println("server has queue: ", svr.queue.values)
 		// fmt.Println("server has vec_clock: ", svr.vec_clock)
@@ -145,7 +146,7 @@ func (svr *Server) update() {
 		svr.vec_clock_cond.Broadcast()
 		svr.vec_clock_cond.L.Unlock()
 		if err := d.WriteString(msg.Key,msg.Val); err != nil {
-			fmt.Println(err)
+			fmt.Println(err, msg.Key)
 		}
 	}
 }

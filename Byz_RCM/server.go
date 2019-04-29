@@ -64,7 +64,7 @@ func (svr *Server) recvWrite(key string, val string, id int, counter int, vec_i 
 	if _,isIn := svr.has_sent[entry]; !isIn {
 		svr.publish(&msg)
 		svr.has_sent[entry] = true
-		fmt.Printf("Server %d published msg UPDATE in response to WRITE from client %d\n", node_id, id)
+		// fmt.Printf("Server %d published msg UPDATE in response to WRITE from client %d\n", node_id, id)
 	}
 	svr.has_sent_lock.Unlock()
 
@@ -91,7 +91,7 @@ func (svr *Server) recvUpdate(key string, val string, id int, counter int, vec_i
 					msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
 					svr.publish(&msg)
 					svr.has_sent[entry] = true
-					fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
+					// fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
 				}
 				svr.has_sent_lock.Unlock()
 
@@ -112,7 +112,7 @@ func (svr *Server) recvUpdate(key string, val string, id int, counter int, vec_i
 				msg := Message{Kind: UPDATE, Key: key, Val: val, Id: id, Counter: counter, Vec: vec_i, Sender: node_id}
 				svr.publish(&msg)
 				svr.has_sent[entry] = true
-				fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
+				// fmt.Printf("Server %d published msg UPDATE in response to UPDATE from server %d\n", node_id, sender_id)
 			}
 			svr.has_sent_lock.Unlock()
 

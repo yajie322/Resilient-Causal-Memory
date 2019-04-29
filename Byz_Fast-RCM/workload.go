@@ -18,7 +18,7 @@ const DATA_SIZE = 64
 func (clt *Client) initWrite(num int){
 	// write data in the form (string,blob) into table tmp
 	for i:= 0; i < num; i++{
-		key := string(i)
+		key := strconv.Itoa(i)
 		clt.write(key, strings.Repeat(strconv.Itoa(i % 10), DATA_SIZE))
 	}
 }
@@ -26,7 +26,7 @@ func (clt *Client) initWrite(num int){
 // write info into table
 func (clt *Client) write_load(num int, val string) time.Duration {
 	// write data in the form (int, string) into table tmp
-	key := string(num)
+	key := strconv.Itoa(num)
 	start := time.Now()
 	clt.write(key, val)
 	end := time.Now()
@@ -37,7 +37,7 @@ func (clt *Client) write_load(num int, val string) time.Duration {
 // read info from table by key
 func (clt *Client) read_load(num int) time.Duration {
 	// write data in the form table tmp with key = num	
-	key := string(num)
+	key := strconv.Itoa(num)
 	start := time.Now()
 	clt.read(key)
 	end := time.Now()
