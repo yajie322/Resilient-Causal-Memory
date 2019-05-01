@@ -17,7 +17,7 @@ const READ_PORTION = 0.3
 func initWrite(num int){
 	// write data in the form (string,blob) into table tmp
 	for i:= 0; i < num; i++{
-		key := string(i)
+		key := strconv.Itoa(i)
 		write(key, strings.Repeat(strconv.Itoa(i % 10), DATASIZE))
 	}
 }
@@ -26,7 +26,7 @@ func initWrite(num int){
 func write_load(num int, val string) time.Duration {
 	// write data in the form (int, string) into table tmp
 	// mutex.Lock()
-	key := string(num)
+	key := strconv.Itoa(num)
 	start := time.Now()
 	write(key, val)
 	end := time.Now()
@@ -39,7 +39,7 @@ func write_load(num int, val string) time.Duration {
 func read_load(num int) time.Duration {
 	// write data in the form table tmp with key = num
 	// mutex.Lock()
-	key := string(num)
+	key := strconv.Itoa(num)
 	start := time.Now()
 	read(key)
 	end := time.Now()
